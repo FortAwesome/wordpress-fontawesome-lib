@@ -210,7 +210,7 @@ class Kit_Download
             !isset($decoded_body["data"]["createKitDownload"]) ||
             !isset($decoded_body["data"]["createKitDownload"]["buildId"]) ||
             !isset($decoded_body["data"]["createKitDownload"]["status"]) ||
-            !isset($decoded_body["data"]["createKitDownload"]["url"])
+            !array_key_exists("url", $decoded_body["data"]["createKitDownload"])
         ) {
             return new WP_Error(
                 "fontawesome_api_query_unexpected_response",
