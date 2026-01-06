@@ -1,0 +1,14 @@
+{
+  "name": "fortawesome/wordpress-fontawesome-lib",
+  "description": "Library for WordPress Font Awesome",
+  "type": "library",
+  "license": "GPL-2.0-or-later",
+  "autoload": {
+    "psr-4": {
+      "FontAwesomeLib\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=7.4"
+  }
+}
