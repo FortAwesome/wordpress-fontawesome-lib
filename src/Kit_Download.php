@@ -7,10 +7,6 @@ if (!defined("ABSPATH")) {
     exit(); // Exit if accessed directly.
 }
 
-use FontAwesomeLib\Base\FontAwesome_Exception_Base as FontAwesome_Exception;
-use FontAwesomeLib\Exceptions\Api_Request_Exception;
-use FontAwesomeLib\Exceptions\Api_Response_Exception;
-use FontAwesomeLib\Exceptions\Api_Download_Authorization_Exception;
 use FontAwesomeLib\Base\Query_Resolver_Base;
 use \WP_Error;
 
@@ -20,27 +16,41 @@ class Kit_Download
     public const STATUS_FAILED = "FAILED";
     public const STATUS_PENDING = "PENDING";
 
-    protected $_build_id = null;
-    protected $_status = null;
-    protected $_url = null;
+    protected $build_id = null;
+    protected $status = null;
+    protected $url = null;
+    protected $kit_token = null;
 
     /**
      * Construct a new Kit_Download object.
      *
+     * @param string $kit_token
      * @param string $build_id
-     * @param string $status
+     * @param string|null $status
      * @param string|null $url
      * @throws \InvalidArgumentException
      */
-    public function __construct($build_id, $status, $url)
-    {
+    public function __construct(
+        $kit_token,
+        $build_id,
+        $status = null,
+        $url = null,
+    ) {
+        if (!is_string($kit_token) || $kit_token === "") {
+            throw new \InvalidArgumentException(
+                "kit_token must be a non-empty string",
+            );
+        }
+
+        $this->kit_token = $kit_token;
+
         if (!is_string($build_id) || $build_id === "") {
             throw new \InvalidArgumentException(
                 "build_id must be a non-empty string",
             );
         }
 
-        $this->_build_id = $build_id;
+        $this->build_id = $build_id;
 
         if (
             !in_array(
@@ -52,8 +62,8 @@ class Kit_Download
             throw new \InvalidArgumentException("Invalid status: $status");
         }
 
-        $this->_status = $status;
-        $this->_url = $url;
+        $this->status = $status;
+        $this->url = $url;
     }
 
     /**
@@ -63,7 +73,7 @@ class Kit_Download
      */
     public function get_build_id(): string
     {
-        return $this->_build_id;
+        return $this->build_id;
     }
 
     /**
@@ -73,7 +83,7 @@ class Kit_Download
      */
     public function get_status(): string
     {
-        return $this->_status;
+        return $this->status;
     }
 
     /**
@@ -84,7 +94,16 @@ class Kit_Download
      */
     public function get_url(): ?string
     {
-        return $this->_url;
+        return $this->url;
+    }
+
+    /**
+     * Get the kit token associated with this download.
+     * @return string
+     */
+    public function get_kit_token(): string
+    {
+        return $this->kit_token;
     }
 
     /**
@@ -148,6 +167,88 @@ class Kit_Download
         }
         EOT;
 
+        $decoded_body = self::handle_query(
+            $query,
+            $query_resolver,
+            $auth_token_provider,
+        );
+
+        if (
+            !isset($decoded_body["data"]) ||
+            !isset($decoded_body["data"]["createKitDownload"]) ||
+            !isset($decoded_body["data"]["createKitDownload"]["buildId"]) ||
+            !isset($decoded_body["data"]["createKitDownload"]["status"]) ||
+            !array_key_exists("url", $decoded_body["data"]["createKitDownload"])
+        ) {
+            return new WP_Error(
+                "fontawesome_api_query_unexpected_response",
+                "The response from the Font Awesome API server did not contain the expected data.",
+                $decoded_body,
+            );
+        }
+
+        return new self(
+            $kit_token,
+            $decoded_body["data"]["createKitDownload"]["buildId"],
+            $decoded_body["data"]["createKitDownload"]["status"],
+            $decoded_body["data"]["createKitDownload"]["url"],
+        );
+    }
+
+    /**
+     * Fetch the Kit_Download status from the Font Awesome API server.
+     * @param Query_Resolver_Base $query_resolver
+     * @param Auth_Token_Provider_Base $auth_token_provider
+     * @return bool|WP_Error true if the resulting status is READY, WP_Error on error.
+     */
+    public function poll($query_resolver, $auth_token_provider): bool|WP_Error
+    {
+        $query = <<<EOT
+        query {
+           	getKitDownload(buildId: "$this->build_id", buildType: WEB, kitToken: "$this->kit_token") {
+          		buildId
+          		status
+          		url
+           	}
+        }
+        EOT;
+
+        $decoded_body = self::handle_query(
+            $query,
+            $query_resolver,
+            $auth_token_provider,
+        );
+
+        if (
+            !isset($decoded_body["data"]) ||
+            !isset($decoded_body["data"]["getKitDownload"]) ||
+            !isset($decoded_body["data"]["getKitDownload"]["buildId"]) ||
+            !isset($decoded_body["data"]["getKitDownload"]["status"]) ||
+            !array_key_exists("url", $decoded_body["data"]["getKitDownload"])
+        ) {
+            return new WP_Error(
+                "fontawesome_api_query_unexpected_response",
+                "The response from the Font Awesome API server did not contain the expected data.",
+                $decoded_body,
+            );
+        }
+        $this->status = $decoded_body["data"]["getKitDownload"]["status"];
+        $this->url = $decoded_body["data"]["getKitDownload"]["url"];
+        return $this->is_ready();
+    }
+
+    /**
+     * Handle a query to the Font Awesome API server.
+     * @param string $query
+     * @param Query_Resolver_Base $query_resolver
+     * @param Auth_Token_Provider_Base $auth_token_provider
+     * @return array|WP_Error
+     */
+    private static function handle_query(
+        $query,
+        $query_resolver,
+        $auth_token_provider,
+    ): array|WP_Error {
         $response = $query_resolver->query(
             ["query" => $query],
             $auth_token_provider,
@@ -205,29 +306,6 @@ class Kit_Download
             );
         }
 
-        if (
-            !isset($decoded_body["data"]) ||
-            !isset($decoded_body["data"]["createKitDownload"]) ||
-            !isset($decoded_body["data"]["createKitDownload"]["buildId"]) ||
-            !isset($decoded_body["data"]["createKitDownload"]["status"]) ||
-            !array_key_exists("url", $decoded_body["data"]["createKitDownload"])
-        ) {
-            return new WP_Error(
-                "fontawesome_api_query_unexpected_response",
-                "The response from the Font Awesome API server did not contain the expected data.",
-                $decoded_body,
-            );
-        }
-
-        return new self(
-            $decoded_body["data"]["createKitDownload"]["buildId"],
-            $decoded_body["data"]["createKitDownload"]["status"],
-            $decoded_body["data"]["createKitDownload"]["url"],
-        );
+        return $decoded_body;
     }
-
-    /**
-     * Fetch the Kit_Download status from the Font Awesome API server.
-     */
-    function get_kit_download($build_id, $kit_token) {}
 }
