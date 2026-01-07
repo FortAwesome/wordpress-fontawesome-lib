@@ -40,9 +40,6 @@ class Query_Resolver_Base
      *  - variables: array (optional). The variables for the GraphQL query.
      * @param Auth_Token_Provider_Base $auth_token_provider
      * @param array $opts
-     * @throws ApiRequestException
-     * @throws ApiResponseException
-     * @throws \InvalidArgumentException
      * @return array|WP_Error The response from the Font Awesome API server, or WP_Error on failure.
      * See WP_Http::request() for information on return value.
      */
@@ -50,14 +47,15 @@ class Query_Resolver_Base
         $query_params,
         $auth_token_provider,
         $opts = ["ignore_auth" => false, "timeout_seconds" => 10],
-    ): array {
+    ): array|WP_Error {
         if (
             !is_array($query_params) ||
             !array_key_exists("query", $query_params) ||
             !is_string($query_params["query"]) ||
             $query_params["query"] === ""
         ) {
-            throw new \InvalidArgumentException(
+            return new WP_Error(
+                "fontawesome_invalid_query_params",
                 "query_params must be an array with a non-empty 'query' string key",
             );
         }
@@ -71,6 +69,13 @@ class Query_Resolver_Base
         }
 
         $body = \wp_json_encode($filtered_query_array);
+
+        if (!is_string($body)) {
+            return new WP_Error(
+                "fontawesome_json_encoding_error",
+                "Failed to encode query parameters as JSON",
+            );
+        }
 
         $timeout_seconds = $opts["timeout_seconds"] ?? 10;
 
