@@ -203,6 +203,10 @@ class Kit_Download
      */
     public function poll($query_resolver, $auth_token_provider): bool|WP_Error
     {
+        if ($this->is_ready()) {
+            return true;
+        }
+
         $query = <<<EOT
         query {
            	getKitDownload(buildId: "$this->build_id", buildType: WEB, kitToken: "$this->kit_token") {
@@ -307,5 +311,101 @@ class Kit_Download
         }
 
         return $decoded_body;
+    }
+
+    /**
+     * Download the kit zip file to a temporary directory.
+     * @return string|WP_Error The path to the temporary directory containing the downloaded zip file, or WP_Error on error.
+     * The caller is responsible for cleaning up the temporary directory.
+     */
+    public function download(): string|WP_Error
+    {
+        if (!$this->is_ready() || !$this->url === null) {
+            return new WP_Error(
+                "fontawesome_api_kit_download_not_ready",
+                __(
+                    "The kit download is not ready. Cannot download.",
+                    "wordpress-fontawesome-lib",
+                ),
+            );
+        }
+
+        $base_temp_dir = apply_filters(
+            "fontawesome_lib_temp_dir",
+            get_temp_dir(),
+        );
+
+        $temp_dir = $base_temp_dir . "fontawesome-" . wp_generate_uuid4() . "/";
+
+        $was_temp_dir_created = wp_mkdir_p($temp_dir);
+
+        if (!$was_temp_dir_created) {
+            return new WP_Error(
+                "fontawesome_api_temp_dir_creation_failed",
+                "Failed to create temporary directory.",
+                ["temp_dir" => $temp_dir],
+            );
+        }
+
+        if (!is_dir($temp_dir) || !is_writable($temp_dir)) {
+            return new WP_Error(
+                "fontawesome_api_invalid_temp_dir",
+                "Temporary directory is not writable.",
+                ["temp_dir" => $temp_dir],
+            );
+        }
+
+        $zip_file_path = trailingslashit($temp_dir) . "kit.zip";
+
+        $timeout_seconds = apply_filters(
+            "fontawesome_lib_kit_download_timeout_seconds",
+            30,
+        );
+
+        $response = wp_remote_get($this->url, [
+            "timeout" => $timeout_seconds,
+            "stream" => true,
+            "filename" => $zip_file_path,
+        ]);
+
+        if (is_wp_error($response)) {
+            $response->add(
+                "fontawesome_api_kit_download_request_error",
+                __(
+                    "HTTP request to download Font Awesome kit zip file failed.",
+                    "wordpress-fontawesome-lib",
+                ),
+            );
+
+            return $response;
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+
+        if (200 !== $code) {
+            return new WP_Error(
+                "fontawesome_api_kit_download_response_not_ok",
+                sprintf(
+                    /* translators: 1: HTTP response code */
+                    __(
+                        'Unexpected HTTP response code when downloading Font Awesome kit zip: %1$s',
+                        "font-awesome",
+                    ),
+                    $code,
+                ),
+            );
+        }
+
+        if (!file_exists($zip_file_path) || filesize($zip_file_path) === 0) {
+            return new WP_Error(
+                "fontawesome_api_kit_download_response_not_ok",
+                __(
+                    "Downloaded Font Awesome kit zip file is not valid.",
+                    "wordpress-fontawesome-lib",
+                ),
+            );
+        }
+
+        return $temp_dir;
     }
 }
