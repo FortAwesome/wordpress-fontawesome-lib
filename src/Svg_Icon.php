@@ -93,12 +93,15 @@ class Svg_Icon
 
         if ($this->is_duotone()) {
             $svg .= sprintf(
-                '<path opacity=".4" d="%s"/>',
+                '<path style="fill:var(--fa-secondary-color,currentColor);opacity:var(--fa-secondary-opacity,.4)" d="%s"/>',
                 \esc_attr($this->secondary_path),
             );
         }
 
-        $svg .= sprintf('<path d="%s"/>', \esc_attr($this->primary_path));
+        $svg .= sprintf(
+            '<path style="fill:var(--fa-primary-color,currentColor);opacity:var(--fa-primary-opacity,1)" d="%s"/>',
+            \esc_attr($this->primary_path),
+        );
 
         $svg .= "</svg>";
 
