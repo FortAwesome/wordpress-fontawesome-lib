@@ -847,6 +847,12 @@ class Kit_Download
                 )
             ) {
                 $family_style["shorthand"] = $family_style_shorthand;
+                $family_style[
+                    "label"
+                ] = Metadata::convert_family_style_to_label(
+                    $family_style["family"],
+                    $family_style["style"],
+                );
                 $result[] = $family_style;
             }
         }
@@ -863,6 +869,10 @@ class Kit_Download
                     "style" => $style,
                     "prefix" => $kit_family === "kit" ? "fak" : "fakd",
                     "shorthand" => $kit_custom_shorthand,
+                    "label" => Metadata::convert_family_style_to_label(
+                        $kit_family,
+                        $style,
+                    ),
                 ];
             }
         }
