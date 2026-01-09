@@ -62,4 +62,30 @@ class Metadata
 
         return null;
     }
+
+    /**
+     * Convert a Font Awesome family style shorthand into a human readable label.
+     * @param string $family The Font Awesome family (e.g., "sharp", "classic").
+     * @param string $style The Font Awesome style (e.g., "solid", "regular").
+     * @return string The human readable label for the given family style (e.g., "Thin", "Sharp Solid", "Duotone Regular", "Brands").
+     */
+    public static function convert_family_style_to_label(
+        $family,
+        $style,
+    ): string {
+        if ("classic" === $family) {
+            return ucfirst($style);
+        }
+
+        if ("brands" === $style) {
+            return ucfirst($style);
+        }
+
+        $family_parts = explode("-", $family);
+        $family_label_parts = array_map(function ($part) {
+            return ucfirst($part);
+        }, $family_parts);
+
+        return implode(" ", $family_label_parts) . " " . ucfirst($style);
+    }
 }
