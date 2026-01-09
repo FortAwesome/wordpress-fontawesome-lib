@@ -629,7 +629,7 @@ class Kit_Download
             return $write_result;
         }
 
-        $included_family_styles = $this->build_svg_objects_and_icon_metadata(
+        $included_family_styles = $this->build_svg_objects_and_metadata(
             $wp_filesystem,
             $zip_temp_dir,
             $staging_dir,
@@ -640,7 +640,9 @@ class Kit_Download
             return $included_family_styles;
         }
 
-        $kit_metadata["included_family_styles"] = $included_family_styles;
+        $kit_metadata[
+            "included_family_styles"
+        ] = $included_family_styles->family_styles_for_json();
         $kit_metadata["build_id"] = $this->get_build_id();
 
         $write_result = self::encode_and_write_json(
@@ -677,12 +679,12 @@ class Kit_Download
     /**
      * @return array|WP_Error on success, returns an array of family-style items indicating all family styles included in the kit.
      */
-    private function build_svg_objects_and_icon_metadata(
+    private function build_svg_objects_and_metadata(
         $wp_filesystem,
         $source_base_dir,
         $assets_staging_dir,
         $family_styles_metadata,
-    ): array|WP_Error {
+    ): Family_Style_Collection|WP_Error {
         $icon_families_json_path =
             trailingslashit($source_base_dir) . "metadata/icon-families.json";
 
@@ -739,7 +741,7 @@ class Kit_Download
                         "path" => $svg_data["path"],
                     ];
 
-                    $family_style_shorthand = Metadata::map_family_style_to_shorthand(
+                    $family_style_shorthand = Family_Style::map_family_and_style_to_shorthand(
                         $family,
                         $style,
                     );
@@ -810,65 +812,39 @@ class Kit_Download
             }
         }
 
-        return self::transform_family_style_shorthands(
-            array_keys($icons_by_family_style_shorthand),
+        $all_family_styles = new Family_Style_Collection(
             $family_styles_metadata,
+        );
+
+        $all_family_styles->add_family_style(
+            Family_Style::kit_custom_family_style(),
+        );
+
+        $all_family_styles->add_family_style(
+            Family_Style::kit_duotone_custom_family_style(),
+        );
+
+        return self::build_family_style_collection_subset(
+            array_keys($icons_by_family_style_shorthand),
+            $all_family_styles,
         );
     }
 
-    private static function transform_family_style_shorthands(
+    private static function build_family_style_collection_subset(
         $family_style_shorthands,
-        $family_styles_metadata,
-    ) {
-        $result = [];
+        $all_family_styles,
+    ): Family_Style_Collection {
+        $result = new Family_Style_Collection();
 
-        // Filter the official family styles metadata to only include those in the given shorthands.
-        foreach ($family_styles_metadata as $family_style) {
-            if (
-                !is_array($family_style) ||
-                !isset($family_style["family"]) ||
-                !isset($family_style["style"]) ||
-                !isset($family_style["prefix"])
-            ) {
-                continue;
-            }
-
-            $family_style_shorthand = Metadata::map_family_style_to_shorthand(
-                $family_style["family"],
-                $family_style["style"],
-            );
-
+        foreach ($all_family_styles->family_styles() as $family_style) {
             if (
                 in_array(
-                    $family_style_shorthand,
+                    $family_style->shorthand(),
                     $family_style_shorthands,
                     true,
                 )
             ) {
-                $family_style["shorthand"] = $family_style_shorthand;
-                $family_style["label"] = Metadata::map_family_style_to_label(
-                    $family_style["family"],
-                    $family_style["style"],
-                );
-                $result[] = $family_style;
-            }
-        }
-
-        $kit_custom_family_style = Metadata::kit_custom_family_style();
-        $kit_duotone_custom_family_style = Metadata::kit_duotone_custom_family_style();
-
-        foreach (
-            [$kit_custom_family_style, $kit_duotone_custom_family_style]
-            as $family_style
-        ) {
-            if (
-                in_array(
-                    $family_style["shorthand"],
-                    $family_style_shorthands,
-                    true,
-                )
-            ) {
-                $result[] = $family_style;
+                $result->add_family_style($family_style);
             }
         }
 
