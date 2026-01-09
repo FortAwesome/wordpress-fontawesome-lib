@@ -848,9 +848,7 @@ class Kit_Download
                 )
             ) {
                 $family_style["shorthand"] = $family_style_shorthand;
-                $family_style[
-                    "label"
-                ] = Metadata::convert_family_style_to_label(
+                $family_style["label"] = Metadata::map_family_style_to_label(
                     $family_style["family"],
                     $family_style["style"],
                 );
@@ -858,23 +856,21 @@ class Kit_Download
             }
         }
 
-        foreach (["kit", "kit-duotone"] as $kit_family) {
-            $style = "custom";
-            $kit_custom_shorthand = "$kit_family-$style";
+        $kit_custom_family_style = Metadata::kit_custom_family_style();
+        $kit_duotone_custom_family_style = Metadata::kit_duotone_custom_family_style();
 
+        foreach (
+            [$kit_custom_family_style, $kit_duotone_custom_family_style]
+            as $family_style
+        ) {
             if (
-                in_array($kit_custom_shorthand, $family_style_shorthands, true)
+                in_array(
+                    $family_style["shorthand"],
+                    $family_style_shorthands,
+                    true,
+                )
             ) {
-                $result[] = [
-                    "family" => $kit_family,
-                    "style" => $style,
-                    "prefix" => $kit_family === "kit" ? "fak" : "fakd",
-                    "shorthand" => $kit_custom_shorthand,
-                    "label" => Metadata::convert_family_style_to_label(
-                        $kit_family,
-                        $style,
-                    ),
-                ];
+                $result[] = $family_style;
             }
         }
 
