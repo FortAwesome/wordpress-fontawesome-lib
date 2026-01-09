@@ -641,6 +641,7 @@ class Kit_Download
         }
 
         $kit_metadata["included_family_styles"] = $included_family_styles;
+        $kit_metadata["build_id"] = $this->get_build_id();
 
         $write_result = self::encode_and_write_json(
             $wp_filesystem,
