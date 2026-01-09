@@ -26,39 +26,27 @@ class Metadata
      *   However, these don't have shorthands that follow the same conventions as the official family styles.
      *   In a kit download zip, for example, the monotone custom icons are referred to as "custom-icons", and the duotone custom icons are referrred to as "custom-icons-duotone".
      *   And the corresponding CSS classes are "fa-kit" and "fa-kit-duotone".
+     *
+     * This function does not validate the existence of the given family style in any particular Font Awesome release.
+     * It merely constructs the shorthand according to the established conventions.
+     *
+     * @param string $family The Font Awesome family (e.g., "sharp", "classic").
+     * @param string $style The Font Awesome style (e.g., "solid", "regular").
+     * @return string The normalized family style shorthand (e.g., "sharp-solid", "solid", "duotone")
      */
-    public static function normalize_family_style_shorthand(
-        $family_styles,
+    public static function map_family_style_to_shorthand(
         $family,
         $style,
-    ): ?string {
-        foreach ($family_styles as $fs) {
-            if (
-                isset($fs["family"]) &&
-                isset($fs["style"]) &&
-                $fs["family"] === $family &&
-                $fs["style"] === $style
-            ) {
-                if ("classic" === $family) {
-                    return $style;
-                }
-
-                if ("duotone" === $family && "solid" === $style) {
-                    return "duotone";
-                }
-
-                return "$family-$style";
-            }
+    ): string {
+        if ("classic" === $family) {
+            return $style;
         }
 
-        if (
-            ("kit" === $family || "kit-duotone" === $family) &&
-            "custom" === $style
-        ) {
-            return "$family-$style";
+        if ("duotone" === $family && "solid" === $style) {
+            return "duotone";
         }
 
-        return null;
+        return "$family-$style";
     }
 
     /**

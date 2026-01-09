@@ -739,8 +739,7 @@ class Kit_Download
                         "path" => $svg_data["path"],
                     ];
 
-                    $family_style_shorthand = Metadata::normalize_family_style_shorthand(
-                        $family_styles_metadata,
+                    $family_style_shorthand = Metadata::map_family_style_to_shorthand(
                         $family,
                         $style,
                     );
@@ -834,8 +833,7 @@ class Kit_Download
                 continue;
             }
 
-            $family_style_shorthand = Metadata::normalize_family_style_shorthand(
-                $family_styles_metadata,
+            $family_style_shorthand = Metadata::map_family_style_to_shorthand(
                 $family_style["family"],
                 $family_style["style"],
             );
