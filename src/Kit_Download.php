@@ -140,6 +140,10 @@ class Kit_Download
             $auth_token_provider,
         );
 
+        if (is_wp_error($decoded_body)) {
+            return $decoded_body;
+        }
+
         if (
             !isset($decoded_body["data"]) ||
             !isset($decoded_body["data"]["createKitDownload"]) ||
@@ -723,7 +727,7 @@ class Kit_Download
             );
         }
 
-        $icons_by_family_style = [];
+        $icons_by_family_style_shorthand = [];
 
         foreach ($icon_families_data as $icon_name => $icon_data) {
             foreach ($icon_data["svgs"] as $family => $style_map) {
@@ -734,11 +738,15 @@ class Kit_Download
                         "path" => $svg_data["path"],
                     ];
 
-                    $family_style_string = "$family-$style";
+                    $family_style_shorthand = Metadata::normalize_family_style_shorthand(
+                        $family_styles_metadata,
+                        $family,
+                        $style,
+                    );
 
                     $family_style_dir =
                         trailingslashit($svg_objects_dir) .
-                        $family_style_string;
+                        $family_style_shorthand;
 
                     $mkdir_result = self::mkdir_p(
                         $wp_filesystem,
@@ -762,26 +770,34 @@ class Kit_Download
                         return $result;
                     }
 
-                    if (!isset($icons_by_family_style[$family_style_string])) {
-                        $icons_by_family_style[$family_style_string] = [];
+                    if (
+                        !isset(
+                            $icons_by_family_style_shorthand[
+                                $family_style_shorthand
+                            ],
+                        )
+                    ) {
+                        $icons_by_family_style_shorthand[
+                            $family_style_shorthand
+                        ] = [];
                     }
 
                     // Icon names must be quoted because some are numeric.
-                    $icons_by_family_style[
-                        $family_style_string
+                    $icons_by_family_style_shorthand[
+                        $family_style_shorthand
                     ][] = "$icon_name";
                 }
             }
         }
 
         foreach (
-            $icons_by_family_style
-            as $family_style_string => $icon_names
+            $icons_by_family_style_shorthand
+            as $family_style_shorthand => $icon_names
         ) {
             $icon_names_in_family_style = ["icons" => $icon_names];
             $file_path =
                 trailingslashit($assets_staging_dir) .
-                "metadata/$family_style_string.json";
+                "metadata/$family_style_shorthand.json";
 
             $result = self::encode_and_write_json(
                 $wp_filesystem,
@@ -794,7 +810,64 @@ class Kit_Download
             }
         }
 
-        return array_keys($icons_by_family_style);
+        return self::transform_family_style_shorthands(
+            array_keys($icons_by_family_style_shorthand),
+            $family_styles_metadata,
+        );
+    }
+
+    private static function transform_family_style_shorthands(
+        $family_style_shorthands,
+        $family_styles_metadata,
+    ) {
+        $result = [];
+
+        // Filter the official family styles metadata to only include those in the given shorthands.
+        foreach ($family_styles_metadata as $family_style) {
+            if (
+                !is_array($family_style) ||
+                !isset($family_style["family"]) ||
+                !isset($family_style["style"]) ||
+                !isset($family_style["prefix"])
+            ) {
+                continue;
+            }
+
+            $family_style_shorthand = Metadata::normalize_family_style_shorthand(
+                $family_styles_metadata,
+                $family_style["family"],
+                $family_style["style"],
+            );
+
+            if (
+                in_array(
+                    $family_style_shorthand,
+                    $family_style_shorthands,
+                    true,
+                )
+            ) {
+                $family_style["shorthand"] = $family_style_shorthand;
+                $result[] = $family_style;
+            }
+        }
+
+        foreach (["kit", "kit-duotone"] as $kit_family) {
+            $style = "custom";
+            $kit_custom_shorthand = "$kit_family-$style";
+
+            if (
+                in_array($kit_custom_shorthand, $family_style_shorthands, true)
+            ) {
+                $result[] = [
+                    "family" => $kit_family,
+                    "style" => $style,
+                    "prefix" => $kit_family === "kit" ? "fak" : "fakd",
+                    "shorthand" => $kit_custom_shorthand,
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /**
