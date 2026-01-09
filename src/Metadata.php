@@ -88,4 +88,36 @@ class Metadata
 
         return implode(" ", $family_label_parts) . " " . ucfirst($style);
     }
+
+    /**
+     * Map a Font Awesome family style to the corresponding asset file stem.
+     *
+     * This handles special cases for classic, duotone, and custom icons.
+     *
+     * @param string $family The Font Awesome family (e.g., "sharp", "classic").
+     * @param string $style The Font Awesome style (e.g., "solid", "regular").
+     * @return string The asset file stem for the given family style (e.g., "sharp-solid", "solid", "duotone", "custom-icons", "custom-icons-duotone").
+     */
+    public static function map_family_style_to_asset_file_stem(
+        $family,
+        $style,
+    ): string {
+        if ("classic" === $family) {
+            return $style;
+        }
+
+        if ("duotone" === $family && "solid" === $style) {
+            return "duotone";
+        }
+
+        if ("kit" === $family) {
+            return "custom-icons";
+        }
+
+        if ("kit-duotone" === $family) {
+            return "custom-icons-duotone";
+        }
+
+        return "$family-$style";
+    }
 }
