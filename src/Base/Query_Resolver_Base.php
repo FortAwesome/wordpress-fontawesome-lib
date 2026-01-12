@@ -8,8 +8,6 @@ if (!defined("ABSPATH")) {
 }
 
 use FontAwesomeLib\Base\Auth_Token_Provider_Base;
-use FontAwesomeLib\Exceptions\ApiRequestException;
-use FontAwesomeLib\Exceptions\ApiResponseException;
 
 class Query_Resolver_Base
 {
