@@ -1,0 +1,2 @@
+#!/bin/bash
+wp-env run cli --env-cwd wp-content/lib/wordpress-fontawesome-lib bash
