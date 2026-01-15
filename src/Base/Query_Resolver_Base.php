@@ -8,6 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use FontAwesomeLib\Base\Auth_Token_Provider_Base;
+use WP_Error;
 
 class Query_Resolver_Base {
 
@@ -98,6 +99,11 @@ class Query_Resolver_Base {
 
 		if ( ! $ignore_auth ) {
 			$access_token = $auth_token_provider->get_access_token();
+
+			if ( is_wp_error( $access_token ) ) {
+				return $access_token;
+			}
+
 			$args['headers']['authorization'] = "Bearer $access_token";
 		}
 

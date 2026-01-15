@@ -7,8 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit(); // Exit if accessed directly.
 }
 
-use FontAwesomeLib\Exceptions\Api_Token_Endpoint_Response_Exception;
-use InvalidArgumentException, RuntimeException;
+use WP_Error;
 
 class Auth_Token_Provider_Base {
 
@@ -30,9 +29,7 @@ class Auth_Token_Provider_Base {
 	 */
 	public function __construct( $api_token, $opts = [] ) {
 		if ( ! is_string( $api_token ) || '' === $api_token ) {
-			throw new \InvalidArgumentException(
-				'api_token must be a non-empty string',
-			);
+			return;
 		}
 
 		if (
@@ -47,23 +44,32 @@ class Auth_Token_Provider_Base {
 	}
 
 	/**
-	 * @throws FontAwesome_Exception_Base
+	 * @return string|WP_Error
 	 */
-	public function get_api_token(): string {
+	public function get_api_token(): string|WP_Error {
+		if ( ! is_string( $this->api_token ) || '' === $this->api_token ) {
+			return new WP_Error(
+				'fontawesome_invalid_api_token',
+				__(
+					'Font Awesome Lib: API token is invalid or missing.',
+					'wordpress-fontawesome-lib'
+				)
+			);
+		}
+
 		return $this->api_token;
 	}
 
 	/**
 	 * Get a current valid access token, refreshing it if necessary.
 	 *
-	 * @throws FontAwesome_Exception_Base
-	 * @return string a current valid access token.
+	 * @return string|WP_Error a current valid access token or WP_Error on failure.
 	 */
-	public function get_access_token(): string {
-		if ( ! is_string( $this->api_token ) || '' === $this->api_token ) {
-			throw new \InvalidArgumentException(
-				'api_token must be a non-empty string',
-			);
+	public function get_access_token(): string|WP_Error {
+		$api_token = $this->get_api_token();
+
+		if ( is_wp_error( $api_token ) ) {
+			return $api_token;
 		}
 
 		$exp = $this->get_access_token_expiration_time_unix();
@@ -72,7 +78,14 @@ class Auth_Token_Provider_Base {
 			return $this->access_token;
 		} else {
 			// refresh the access token.
-			$this->access_token = $this->request_access_token();
+			$access_token = $this->request_access_token();
+
+			if ( is_wp_error( $access_token ) ) {
+				return $access_token;
+			}
+
+			$this->access_token = $access_token;
+
 			return $this->access_token;
 		}
 	}
@@ -91,31 +104,45 @@ class Auth_Token_Provider_Base {
 	 * This both updates this object's access token and its access token expiration time, and
 	 * returns the new access token.
 	 *
-	 * @throws RuntimeException
-	 * @throws Api_Token_Endpoint_Response_Exception
-	 * @return string The new access token.
+	 * @return string|WP_Error The new access token or WP_Error on failure.
 	 */
-	public function request_access_token(): string {
+	public function request_access_token(): string|WP_Error {
 		if ( ! is_string( $this->api_token ) ) {
-			throw new \RuntimeException( 'missing Font Awesome api token' );
+			return new WP_Error(
+				'fontawesome_missing_api_token',
+				__(
+					'Font Awesome Lib: missing API token when requesting access token.',
+					'wordpress-fontawesome-lib'
+				)
+			);
 		}
 
 		$response = $this->post([
-			'body' => '',
-			'headers' => [
+			'body'   => '',
+			'headers'=> [
 				'authorization' => 'Bearer ' . $this->api_token,
 			],
 		]);
 
 		if ( \is_wp_error( $response ) ) {
-			throw Api_Token_Endpoint_Response_Exception::with_wp_error(
-				$response,
+			return new WP_Error(
+				'fontawesome_api_token_endpoint_error',
+				__(
+					'Font Awesome Lib: error response from API token endpoint.',
+					'wordpress-fontawesome-lib'
+				),
+				$response
 			);
 		}
 
 		if ( 200 !== $response['response']['code'] ) {
-			throw Api_Token_Endpoint_Response_Exception::with_wp_response(
-				$response,
+			return new WP_Error(
+				'fontawesome_api_token_endpoint_http_error',
+				__(
+					'Font Awesome Lib: unexpected HTTP status from API token endpoint.',
+					'wordpress-fontawesome-lib'
+				),
+				$response
 			);
 		}
 
@@ -127,8 +154,13 @@ class Auth_Token_Provider_Base {
 			! isset( $body['expires_in'] ) ||
 			! is_int( $body['expires_in'] )
 		) {
-			throw Api_Token_Endpoint_Response_Exception::with_wp_response(
-				$response,
+			return new WP_Error(
+				'fontawesome_api_token_endpoint_invalid_body',
+				__(
+					'Font Awesome Lib: API token endpoint response was invalid.',
+					'wordpress-fontawesome-lib'
+				),
+				$response
 			);
 		}
 
@@ -136,10 +168,19 @@ class Auth_Token_Provider_Base {
 			$this->access_token_expiration_time_unix =
 				$body['expires_in'] + time();
 			$this->access_token = $body['access_token'];
+
 			return $this->access_token;
-		} catch ( InvalidArgumentException $e ) {
-			throw Api_Token_Endpoint_Response_Exception::with_wp_response(
-				$response,
+		} catch ( \InvalidArgumentException $e ) {
+			return new WP_Error(
+				'fontawesome_api_token_endpoint_processing_error',
+				__(
+					'Font Awesome Lib: failed to process API token endpoint response.',
+					'wordpress-fontawesome-lib'
+				),
+				[
+					'response' => $response,
+					'exception' => $e,
+				]
 			);
 		}
 	}
@@ -148,7 +189,6 @@ class Auth_Token_Provider_Base {
 	 * Make a POST request to the API token endpoint via `wp_remote_post()`.
 	 *
 	 * @param array $args Arguments to pass to `wp_remote_post()`.
-	 * @throws Api_Token_Endpoint_Response_Exception
 	 * @return array|WP_Error The response or WP_Error on failure.
 	 * See WP_Http::request() for information on return value.
 	 */
