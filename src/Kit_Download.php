@@ -149,7 +149,10 @@ class Kit_Download {
 		) {
 			return new WP_Error(
 				'fontawesome_api_query_unexpected_response',
-				'The response from the Font Awesome API server did not contain the expected data.',
+				__(
+					'The response from the Font Awesome API server did not contain the expected data.',
+					'wordpress-fontawesome-lib'
+				),
 				$decoded_body,
 			);
 		}
@@ -230,7 +233,7 @@ class Kit_Download {
 			$auth_token_provider,
 		);
 
-		if ( $response instanceof WP_Error ) {
+		if ( is_wp_error( $response ) ) {
 			$response->add(
 				'fontawesome_api_request_error',
 				__(
