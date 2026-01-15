@@ -110,7 +110,7 @@ class Kit_Download {
 		$auth_token_provider,
 		$kit_token,
 	): self|WP_Error {
-		if ( ! is_string( $kit_token ) || $kit_token === '' ) {
+		if ( ! is_string( $kit_token ) || '' === $kit_token ) {
 			return new WP_Error(
 				'fontawesome_invalid_kit_token',
 				__(
@@ -121,14 +121,14 @@ class Kit_Download {
 		}
 
 		$query = <<<EOT
-        mutation {
-           	createKitDownload(buildType: WEB, kitToken: "$kit_token" ) {
-          		buildId
-          		status
-          		url
-           	}
-        }
-        EOT;
+		mutation {
+		    createKitDownload(buildType: WEB, kitToken: "$kit_token" ) {
+				buildId
+				status
+				url
+			}
+		}
+		EOT;
 
 		$decoded_body = self::handle_query(
 			$query,
@@ -179,14 +179,14 @@ class Kit_Download {
 		}
 
 		$query = <<<EOT
-        query {
-           	getKitDownload(buildId: "$this->build_id", buildType: WEB, kitToken: "$this->kit_token") {
-          		buildId
-          		status
-          		url
-           	}
-        }
-        EOT;
+		query {
+		    getKitDownload(buildId: "$this->build_id", buildType: WEB, kitToken: "$this->kit_token") {
+		        buildId
+		        status
+		        url
+		    }
+		}
+		EOT;
 
 		$decoded_body = self::handle_query(
 			$query,
@@ -370,7 +370,7 @@ class Kit_Download {
 					/* translators: 1: HTTP response code */
 					__(
 						'Unexpected HTTP response code when downloading Font Awesome kit zip: %1$s',
-						'font-awesome',
+						'wordpress-fontawesome-lib',
 					),
 					$code,
 				),
@@ -478,8 +478,9 @@ class Kit_Download {
 		try {
 			$wp_filesystem->delete( $zip_temp_dir, true );
 		} catch ( \Exception $e ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log(
-				"Failed to clean up temporary directory $zip_temp_dir: " .
+				"Font Awesome Lib: failed to clean up temporary directory $zip_temp_dir: " .
 					$e->getMessage(),
 			);
 		}
@@ -490,10 +491,13 @@ class Kit_Download {
 	public function kit_assets_selfhosting_dir_path(
 		$destination_base_dir,
 	): string|WP_Error {
-		if ( ! is_string( $destination_base_dir ) || '' == $destination_base_dir ) {
+		if ( ! is_string( $destination_base_dir ) || '' === $destination_base_dir ) {
 			return new WP_Error(
 				'fontawesome_invalid_kit_assets_selfhosting_dir_path',
-				'The provided destination base directory is not valid. It must be a non-empty string.',
+				__(
+					'The provided destination base directory is not valid. It must be a non-empty string.',
+					'wordpress-fontawesome-lib',
+				),
 			);
 		}
 
@@ -563,6 +567,7 @@ class Kit_Download {
 			);
 		}
 
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 			$entry = $zip->getNameIndex( $i );
 
@@ -917,23 +922,23 @@ class Kit_Download {
 		$auth_token_provider,
 	): array|WP_Error {
 		$query = <<<EOT
-        query {
-            me {
-                kit(token: "{$this->get_kit_token()}") {
-                  token
-                  licenseSelected
-                  release {
-                    version
-                    familyStyles {
-                      family
-                      style
-                      prefix
-                    }
-                  }
-                }
-            }
-        }
-        EOT;
+		query {
+		    me {
+		        kit(token: "{$this->get_kit_token()}") {
+		          token
+		          licenseSelected
+		          release {
+		            version
+		            familyStyles {
+		              family
+		              style
+		              prefix
+		            }
+		          }
+		        }
+		    }
+		}
+		EOT;
 
 		$decoded_body = self::handle_query(
 			$query,

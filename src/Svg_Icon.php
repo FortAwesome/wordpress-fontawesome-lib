@@ -44,7 +44,7 @@ class Svg_Icon {
 			! isset( $icon_data['height'] ) ||
 			! is_integer( $icon_data['height'] )
 		) {
-			return '';
+			return;
 		}
 
 		$this->view_box_width = $icon_data['width'];
@@ -114,6 +114,6 @@ class Svg_Icon {
 	 * @return bool
 	 */
 	public function is_duotone(): bool {
-		return $this->secondary_path !== null;
+		return null !== $this->secondary_path;
 	}
 }

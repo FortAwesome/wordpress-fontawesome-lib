@@ -105,7 +105,7 @@ class Crypto {
 			$method = $methods[0];
 		}
 
-		if ( $method === null ) {
+		if ( null === $method ) {
 			return new WP_Error(
 				'fontawesome_crypto_no_cipher_methods',
 				__(
@@ -202,7 +202,7 @@ class Crypto {
 
 		if (
 			! $result ||
-			$this->encryption_salt !== substr( $result, -strlen( $this->encryption_salt ) )
+			substr( $result, -strlen( $this->encryption_salt ) ) !== $this->encryption_salt
 		) {
 			return new WP_Error(
 				'fontawesome_crypto_decryption_failed',
