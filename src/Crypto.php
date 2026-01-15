@@ -74,7 +74,7 @@ class Crypto {
 			return $compatibility;
 		}
 
-		if ( ! is_string( $this->encryption_key ) || $this->encryption_key === '' ) {
+		if ( ! is_string( $this->encryption_key ) || '' === $this->encryption_key ) {
 			return new WP_Error(
 				'fontawesome_crypto_invalid_key',
 				__(
@@ -147,7 +147,7 @@ class Crypto {
 			$init_vec,
 		);
 
-		if ( $raw === false ) {
+		if ( false === $raw ) {
 			return new WP_Error(
 				'fontawesome_crypto_encryption_failed',
 				__( 'Data encryption failed.', 'wordpress-fontawesome-lib' ),
@@ -178,7 +178,7 @@ class Crypto {
         // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 		$raw = base64_decode( $data, true );
 
-		if ( $raw === false ) {
+		if ( false === $raw ) {
 			return new WP_Error(
 				'fontawesome_crypto_decryption_failed',
 				__(
@@ -202,8 +202,7 @@ class Crypto {
 
 		if (
 			! $result ||
-			substr( $result, -strlen( $this->encryption_salt ) ) !==
-				$this->encryption_salt
+			$this->encryption_salt !== substr( $result, -strlen( $this->encryption_salt ) )
 		) {
 			return new WP_Error(
 				'fontawesome_crypto_decryption_failed',

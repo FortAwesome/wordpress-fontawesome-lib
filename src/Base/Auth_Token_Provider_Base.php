@@ -29,7 +29,7 @@ class Auth_Token_Provider_Base {
 	 *    - api_base_url: string. The base URL for the Font Awesome API.
 	 */
 	public function __construct( $api_token, $opts = [] ) {
-		if ( ! is_string( $api_token ) || $api_token === '' ) {
+		if ( ! is_string( $api_token ) || '' === $api_token ) {
 			throw new \InvalidArgumentException(
 				'api_token must be a non-empty string',
 			);
@@ -60,7 +60,7 @@ class Auth_Token_Provider_Base {
 	 * @return string a current valid access token.
 	 */
 	public function get_access_token(): string {
-		if ( ! is_string( $this->api_token ) || $this->api_token === '' ) {
+		if ( ! is_string( $this->api_token ) || '' === $this->api_token ) {
 			throw new \InvalidArgumentException(
 				'api_token must be a non-empty string',
 			);

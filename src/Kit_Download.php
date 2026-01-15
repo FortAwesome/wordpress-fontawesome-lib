@@ -75,7 +75,7 @@ class Kit_Download {
 	 * @return bool
 	 */
 	public function is_ready(): bool {
-		return $this->status === self::STATUS_READY;
+		return self::STATUS_READY === $this->status;
 	}
 
 	/**
@@ -84,7 +84,7 @@ class Kit_Download {
 	 * @return bool
 	 */
 	public function is_failed(): bool {
-		return $this->status === self::STATUS_FAILED;
+		return self::STATUS_FAILED === $this->status;
 	}
 
 	/**
@@ -93,7 +93,7 @@ class Kit_Download {
 	 * @return bool
 	 */
 	public function is_pending(): bool {
-		return $this->status === self::STATUS_PENDING;
+		return self::STATUS_PENDING === $this->status;
 	}
 
 	/**
@@ -294,7 +294,7 @@ class Kit_Download {
 	 * The caller is responsible for cleaning up the temporary directory.
 	 */
 	protected function download( $wp_filesystem ): string|WP_Error {
-		if ( ! $this->is_ready() || ! $this->url === null ) {
+		if ( ! $this->is_ready() || null !== $this->url ) {
 			return new WP_Error(
 				'fontawesome_api_kit_download_not_ready',
 				__(
@@ -490,7 +490,7 @@ class Kit_Download {
 	public function kit_assets_selfhosting_dir_path(
 		$destination_base_dir,
 	): string|WP_Error {
-		if ( ! is_string( $destination_base_dir ) || $destination_base_dir == '' ) {
+		if ( ! is_string( $destination_base_dir ) || '' == $destination_base_dir ) {
 			return new WP_Error(
 				'fontawesome_invalid_kit_assets_selfhosting_dir_path',
 				'The provided destination base directory is not valid. It must be a non-empty string.',
