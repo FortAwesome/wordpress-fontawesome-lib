@@ -8,6 +8,9 @@
 
 	<arg name="extensions" value="php"/>
 
+	<file>src</file>
+	<file>tests</file>
+
 	<config name="text_domain" value="wordpress-fontawesome-lib" />
 
 	<exclude-pattern>vendor/</exclude-pattern>
