@@ -19,15 +19,8 @@ class Query_Resolver_Base {
 	 * Construct a new Query_Resolver_Base object, using the given Font Awesome API base URL.
 	 *
 	 * @param string $api_base_url The base URL for the Font Awesome API.
-	 * @throws \InvalidArgumentException
 	 */
 	public function __construct( $api_base_url = self::DEFAULT_API_BASE_URL ) {
-		if ( ! is_string( $api_base_url ) || $api_base_url === '' ) {
-			throw new \InvalidArgumentException(
-				'api_base_url must be a non-empty string',
-			);
-		}
-
 		$this->api_base_url = \untrailingslashit( $api_base_url );
 	}
 
@@ -52,12 +45,25 @@ class Query_Resolver_Base {
 			! is_array( $query_params ) ||
 			! array_key_exists( 'query', $query_params ) ||
 			! is_string( $query_params['query'] ) ||
-			$query_params['query'] === ''
+			'' === $query_params['query']
 		) {
 			return new WP_Error(
 				'fontawesome_invalid_query_params',
-				"query_params must be an array with a non-empty 'query' string key",
+				__(
+				    "query_params must be an array with a non-empty 'query' string key", 
+					"wordpress-fontawesome-lib",
+				),
 			);
+		}
+
+		if ( ! is_string( $this->api_base_url ) || '' === $this->api_base_url ) {
+    		return new WP_Error(
+    			'fontawesome_invalid_api_base_url',
+    			__(
+    			    "Font Awesome API base URL is invalid",
+    				"wordpress-fontawesome-lib",
+    			)
+    		);
 		}
 
 		$body = '';
@@ -118,7 +124,7 @@ class Query_Resolver_Base {
 			if (
 				is_array( $error ) &&
 				array_key_exists( 'message', $error ) &&
-				$error['message'] === 'unauthorized'
+				'unauthorized' === $error['message']
 			) {
 				return true;
 			}

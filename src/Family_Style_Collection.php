@@ -98,7 +98,7 @@ class Family_Style_Collection {
 			if (
 				! array_key_exists( $key, $family_style ) ||
 				! is_string( $family_style[ $key ] ) ||
-				$family_style[ $key ] === ''
+				'' === $family_style[ $key ]
 			) {
 				return false;
 			}
