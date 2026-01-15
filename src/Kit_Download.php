@@ -297,7 +297,7 @@ class Kit_Download {
 	 * The caller is responsible for cleaning up the temporary directory.
 	 */
 	protected function download( $wp_filesystem ): string|WP_Error {
-		if ( ! $this->is_ready() || null !== $this->url ) {
+		if ( ! $this->is_ready() || null === $this->url ) {
 			return new WP_Error(
 				'fontawesome_api_kit_download_not_ready',
 				__(
