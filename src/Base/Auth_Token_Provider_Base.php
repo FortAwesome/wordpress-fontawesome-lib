@@ -35,7 +35,7 @@ class Auth_Token_Provider_Base {
 		if (
 			isset( $opts['api_base_url'] ) &&
 			is_string( $opts['api_base_url'] ) &&
-			$opts['api_base_url'] !== ''
+			'' !== $opts['api_base_url']
 		) {
 			$this->api_base_url = untrailingslashit( $opts['api_base_url'] );
 		}
@@ -119,7 +119,7 @@ class Auth_Token_Provider_Base {
 
 		$response = $this->post([
 			'body'   => '',
-			'headers'=> [
+			'headers' => [
 				'authorization' => 'Bearer ' . $this->api_token,
 			],
 		]);
