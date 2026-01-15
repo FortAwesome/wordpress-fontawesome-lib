@@ -50,20 +50,20 @@ class Query_Resolver_Base {
 			return new WP_Error(
 				'fontawesome_invalid_query_params',
 				__(
-				    "query_params must be an array with a non-empty 'query' string key", 
-					"wordpress-fontawesome-lib",
+					"query_params must be an array with a non-empty 'query' string key",
+					'wordpress-fontawesome-lib',
 				),
 			);
 		}
 
 		if ( ! is_string( $this->api_base_url ) || '' === $this->api_base_url ) {
-    		return new WP_Error(
-    			'fontawesome_invalid_api_base_url',
-    			__(
-    			    "Font Awesome API base URL is invalid",
-    				"wordpress-fontawesome-lib",
-    			)
-    		);
+			return new WP_Error(
+				'fontawesome_invalid_api_base_url',
+				__(
+					'Font Awesome API base URL is invalid',
+					'wordpress-fontawesome-lib',
+				)
+			);
 		}
 
 		$body = '';
