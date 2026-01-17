@@ -197,7 +197,7 @@ class Kit_Download {
 			$auth_token_provider,
 		);
 
-		if( is_wp_error( $decoded_body ) ) {
+		if ( is_wp_error( $decoded_body ) ) {
 			return $decoded_body;
 		}
 
