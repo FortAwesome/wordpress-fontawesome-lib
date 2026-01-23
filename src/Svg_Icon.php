@@ -84,7 +84,8 @@ class Svg_Icon {
 		if (
 			is_array( $opts ) &&
 			isset( $opts['class'] ) &&
-			is_string( $opts['class'] )
+			is_string( $opts['class'] ) &&
+			'' !== $opts['class']
 		) {
 			$svg .= sprintf( ' class="%s"', \esc_attr( $opts['class'] ) );
 		}
