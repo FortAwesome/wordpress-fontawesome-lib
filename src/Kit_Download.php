@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit(); // Exit if accessed directly.
 }
 
-use FontAwesomeLib\Base\Query_Resolver_Base;
+use FontAwesomeLib\Query_Resolver_Base;
 use WP_Error;
 
 class Kit_Download {

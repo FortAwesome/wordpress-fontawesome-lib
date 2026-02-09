@@ -2,8 +2,8 @@
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 use FontAwesomeLib\Kit_Download;
-use FontAwesomeLib\Base\Auth_Token_Provider_Base;
-use FontAwesomeLib\Base\Query_Resolver_Base;
+use FontAwesomeLib\Auth_Token_Provider_Base;
+use FontAwesomeLib\Query_Resolver_Base;
 
 class Kit_DownloadTest extends TestCase
 {

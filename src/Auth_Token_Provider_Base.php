@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace FontAwesomeLib\Base;
+namespace FontAwesomeLib;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit(); // Exit if accessed directly.
