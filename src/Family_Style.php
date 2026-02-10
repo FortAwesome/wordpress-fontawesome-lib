@@ -7,6 +7,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit(); // Exit if accessed directly.
 }
 
+/**
+ * This class encapulates some of the idiosyncratic logic around Font Awesome family styles, such as the special cases for the "classic" and "duotone" families, and the mapping of family styles to shorthands, labels, and asset file stems.
+ */
 class Family_Style {
 
 	protected $family = '';
@@ -156,6 +159,15 @@ class Family_Style {
 	/**
 	 * Map a Font Awesome family style shorthand into a human readable label.
 	 *
+	 * By default this simply produces a label by capitalizing the family and style and separating them with a space.
+	 * For example, "sharp-solid" becomes "Sharp Solid".
+	 *
+	 * However, it also handles special cases, such as: when the family is "classic", then the label
+	 * is formed only by capitalizing the style ("classic solid" becomes "Solid", or "classic brands" becomes "Brands").
+	 *
+	 * This function does not validate the existence of the given family style in any particular Font Awesome release.
+	 * So if you pass in "foo bar", you'll get back "Foo Bar", which is (not yet) a real Font Awesome family style.
+	 *
 	 * @param string $family The Font Awesome family (e.g., "sharp", "classic").
 	 * @param string $style The Font Awesome style (e.g., "solid", "regular").
 	 * @return string The human readable label for the given family style (e.g., "Thin", "Sharp Solid", "Duotone Regular", "Brands").
@@ -165,10 +177,6 @@ class Family_Style {
 		$style,
 	): string {
 		if ( 'classic' === $family ) {
-			return ucfirst( $style );
-		}
-
-		if ( 'brands' === $style ) {
 			return ucfirst( $style );
 		}
 
@@ -184,6 +192,9 @@ class Family_Style {
 	 * Map a Font Awesome family style to the corresponding asset file stem.
 	 *
 	 * This handles special cases for classic, duotone, and custom icons.
+	 *
+	 * This function does not validate the existence of the given family style in any particular Font Awesome release.
+	 * So if you pass in "foo bar", you'll get back "foo-bar", which is (not yet) a real Font Awesome family style.
 	 *
 	 * @param string $family The Font Awesome family (e.g., "sharp", "classic").
 	 * @param string $style The Font Awesome style (e.g., "solid", "regular").
