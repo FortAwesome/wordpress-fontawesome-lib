@@ -192,7 +192,7 @@ class Auth_Token_Provider_Base {
 	 * @return array|WP_Error The response or WP_Error on failure.
 	 * See WP_Http::request() for information on return value.
 	 */
-	public function post( $args ) {
+	protected function post( $args ) {
 		return \wp_remote_post( $this->api_base_url . '/token', $args );
 	}
 }
