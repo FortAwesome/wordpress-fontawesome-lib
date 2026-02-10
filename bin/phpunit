@@ -1,3 +1,5 @@
 #!/bin/bash
 
-wp-env run tests-cli --env-cwd wp-content/lib/wordpress-fontawesome-lib vendor/bin/phpunit "$@"
+# Piping stdout through `cat` forces non-tty mode, which allows this to be run
+# by an AI agent or in CI.
+wp-env run tests-cli --env-cwd wp-content/lib/wordpress-fontawesome-lib vendor/bin/phpunit "$@" | cat
