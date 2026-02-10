@@ -137,29 +137,20 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 	}
 
 	public function test_constructor_allows_custom_api_base_url_and_trims_trailing_slash(): void {
-		$args_out = [];
 		$response = $this->build_token_endpoint_success_response( self::VALID_ACCESS_TOKEN, 60 );
 
-		$provider = new class( self::VALID_API_TOKEN, $response, $args_out ) extends Auth_Token_Provider_Base {
-			private $post_response;
-			private $args_out;
+		$captured = null;
 
-			public function __construct( $api_token, $post_response, array &$args_out ) {
-				$this->post_response = $post_response;
-				$this->args_out      = &$args_out;
-				parent::__construct(
-					$api_token,
-					[
-						'api_base_url' => 'https://example.test/api/',
-					]
-				);
-			}
+		add_filter( 'pre_http_request', function ( $preempt, $args, $url ) use ( &$captured, $response ) {
+		    $captured = [
+		        'url'  => $url,
+		        'args' => $args,
+		    ];
 
-			public function post( $args ) {
-				$this->args_out = $args;
-				return $this->post_response;
-			}
-		};
+		    return $response;
+		}, 10, 3 );
+
+		$provider = new Auth_Token_Provider_Base( self::VALID_API_TOKEN, [ 'api_base_url' => 'https://example.test/api/' ] );
 
 		// Trigger a request so post() is used (and therefore api_base_url is used).
 		$token = $provider->request_access_token();
@@ -167,11 +158,12 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 		$this->assertIsString( $token );
 		$this->assertEquals( self::VALID_ACCESS_TOKEN, $token );
 
-		// We can't directly read protected api_base_url, but we can assert the call target via the fact that
-		// post() is called with args only, and the base class constructs URL internally.
-		// Therefore, at least confirm no unexpected mutation of args.
-		$this->assertArrayHasKey( 'headers', $args_out );
-		$this->assertArrayHasKey( 'authorization', $args_out['headers'] );
+		$this->assertArrayHasKey( 'url', $captured );
+		$this->assertEquals( 'https://example.test/api/token', $captured['url'] );
+		$this->assertArrayHasKey( 'args', $captured );
+		$this->assertArrayHasKey( 'headers', $captured['args'] );
+		$this->assertArrayHasKey( 'authorization', $captured['args']['headers'] );
+		$this->assertEquals( 'Bearer ' . self::VALID_API_TOKEN, $captured['args']['headers']['authorization'] );
 	}
 
 	// =========================================================================
