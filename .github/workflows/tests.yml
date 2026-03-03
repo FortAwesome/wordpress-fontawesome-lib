@@ -29,3 +29,6 @@ jobs:
 
       - name: Run tests
         run: bin/phpunit
+
+      - name: Ensure formatting
+        run: bin/phpcs
