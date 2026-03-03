@@ -3,7 +3,7 @@
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 use FontAwesomeLib\Kit_Download;
 use FontAwesomeLib\Auth_Token_Provider_Base;
-use FontAwesomeLib\Query_Resolver_Base;
+use FontAwesomeLib\Query_Resolver;
 
 class Kit_DownloadTest extends TestCase
 {
@@ -34,13 +34,13 @@ class Kit_DownloadTest extends TestCase
     }
 
     /**
-     * Create a mock Query_Resolver_Base with a configured response.
+     * Create a mock Query_Resolver with a configured response.
      *
      * @param array|WP_Error $response The response to return from query().
      */
-    private function create_mock_query_resolver($response): Query_Resolver_Base
+    private function create_mock_query_resolver($response): Query_Resolver
     {
-        $mock = $this->createMock(Query_Resolver_Base::class);
+        $mock = $this->createMock(Query_Resolver::class);
         $mock->method('query')
             ->willReturn($response);
         return $mock;
@@ -416,7 +416,7 @@ class Kit_DownloadTest extends TestCase
         );
 
         // Create a new mock that should NOT be called since status is already READY
-        $poll_query_resolver = $this->createMock(Query_Resolver_Base::class);
+        $poll_query_resolver = $this->createMock(Query_Resolver::class);
         $poll_query_resolver->expects($this->never())->method('query');
 
         $result = $kit_download->poll($poll_query_resolver, $auth_token_provider);

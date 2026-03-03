@@ -10,14 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 use FontAwesomeLib\Base\Auth_Token_Provider_Base;
 use WP_Error;
 
-class Query_Resolver_Base {
+class Query_Resolver {
 
 	const DEFAULT_API_BASE_URL = 'https://api.fontawesome.com';
 
 	protected $api_base_url = self::DEFAULT_API_BASE_URL;
 
 	/**
-	 * Construct a new Query_Resolver_Base object, using the given Font Awesome API base URL.
+	 * Construct a new Query_Resolver object, using the given Font Awesome API base URL.
 	 *
 	 * @param string $api_base_url The base URL for the Font Awesome API.
 	 */

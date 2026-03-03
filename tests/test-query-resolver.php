@@ -2,13 +2,13 @@
 declare(strict_types=1);
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
-use FontAwesomeLib\Query_Resolver_Base;
+use FontAwesomeLib\Query_Resolver;
 use FontAwesomeLib\Auth_Token_Provider_Base;
 
 /**
- * @covers \FontAwesomeLib\Query_Resolver_Base
+ * @covers \FontAwesomeLib\Query_Resolver
  */
-class Query_Resolver_Base_Test extends TestCase {
+class Query_Resolver_Test extends TestCase {
 
 	public function tearDown(): void {
 	    if ( isset( $this->pre_http_request_cb ) ) {
@@ -41,7 +41,7 @@ class Query_Resolver_Base_Test extends TestCase {
 	}
 
 	public function test_query_returns_error_when_query_params_not_array(): void {
-		$resolver = new Query_Resolver_Base();
+		$resolver = new Query_Resolver();
 		$auth     = $this->create_mock_auth_token_provider_with_token( 'token' );
 
 		$result = $resolver->query( 'not-an-array', $auth );
@@ -51,7 +51,7 @@ class Query_Resolver_Base_Test extends TestCase {
 	}
 
 	public function test_query_returns_error_when_query_key_missing(): void {
-		$resolver = new Query_Resolver_Base();
+		$resolver = new Query_Resolver();
 		$auth     = $this->create_mock_auth_token_provider_with_token( 'token' );
 
 		$result = $resolver->query( [], $auth );
@@ -61,7 +61,7 @@ class Query_Resolver_Base_Test extends TestCase {
 	}
 
 	public function test_query_returns_error_when_query_not_string(): void {
-		$resolver = new Query_Resolver_Base();
+		$resolver = new Query_Resolver();
 		$auth     = $this->create_mock_auth_token_provider_with_token( 'token' );
 
 		$result = $resolver->query( [ 'query' => [ 'nope' ] ], $auth );
@@ -71,7 +71,7 @@ class Query_Resolver_Base_Test extends TestCase {
 	}
 
 	public function test_query_returns_error_when_query_empty_string(): void {
-		$resolver = new Query_Resolver_Base();
+		$resolver = new Query_Resolver();
 		$auth     = $this->create_mock_auth_token_provider_with_token( 'token' );
 
 		$result = $resolver->query( [ 'query' => '' ], $auth );
@@ -81,7 +81,7 @@ class Query_Resolver_Base_Test extends TestCase {
 	}
 
 	public function test_query_returns_error_when_api_base_url_invalid(): void {
-		$resolver = new Query_Resolver_Base();
+		$resolver = new Query_Resolver();
 		$auth     = $this->create_mock_auth_token_provider_with_token( 'token' );
 
 		// Force invalid base URL state.
@@ -94,7 +94,7 @@ class Query_Resolver_Base_Test extends TestCase {
 	}
 
 	public function test_query_returns_auth_token_provider_error_when_get_access_token_fails(): void {
-		$resolver   = new Query_Resolver_Base();
+		$resolver   = new Query_Resolver();
 		$auth_error = new WP_Error( 'auth_failed', 'No token' );
 		$auth       = $this->create_mock_auth_token_provider_with_error( $auth_error );
 
@@ -105,7 +105,7 @@ class Query_Resolver_Base_Test extends TestCase {
 	}
 
 	public function test_query_ignores_auth_when_option_set(): void {
-		$resolver = new Query_Resolver_Base();
+		$resolver = new Query_Resolver();
 		$auth     = $this->createMock( Auth_Token_Provider_Base::class );
 		$auth->expects( $this->never() )->method( 'get_access_token' );
 
@@ -145,7 +145,7 @@ class Query_Resolver_Base_Test extends TestCase {
 
 	public function test_query_sets_authorization_header_and_posts_json(): void {
 		$token_value = 'my-access-token';
-		$resolver = new Query_Resolver_Base();
+		$resolver = new Query_Resolver();
 		$auth     = $this->create_mock_auth_token_provider_with_token( $token_value );
 
 		add_filter(
@@ -196,7 +196,7 @@ class Query_Resolver_Base_Test extends TestCase {
 
 	public function test_has_authorization_error_detects_unauthorized_message(): void {
 		$this->assertTrue(
-			Query_Resolver_Base::has_authorization_error(
+			Query_Resolver::has_authorization_error(
 				[
 					'errors' => [
 						[ 'message' => 'unauthorized' ],
@@ -206,7 +206,7 @@ class Query_Resolver_Base_Test extends TestCase {
 		);
 
 		$this->assertFalse(
-			Query_Resolver_Base::has_authorization_error(
+			Query_Resolver::has_authorization_error(
 				[
 					'errors' => [
 						[ 'message' => 'something else' ],
@@ -215,20 +215,20 @@ class Query_Resolver_Base_Test extends TestCase {
 			)
 		);
 
-		$this->assertFalse( Query_Resolver_Base::has_authorization_error( null ) );
-		$this->assertFalse( Query_Resolver_Base::has_authorization_error( 'nope' ) );
-		$this->assertFalse( Query_Resolver_Base::has_authorization_error( [ 'data' => [] ] ) );
+		$this->assertFalse( Query_Resolver::has_authorization_error( null ) );
+		$this->assertFalse( Query_Resolver::has_authorization_error( 'nope' ) );
+		$this->assertFalse( Query_Resolver::has_authorization_error( [ 'data' => [] ] ) );
 	}
 
 	public function test_has_any_error_returns_true_for_non_array_and_when_errors_present(): void {
-		$this->assertTrue( Query_Resolver_Base::has_any_error( null ) );
-		$this->assertTrue( Query_Resolver_Base::has_any_error( 'nope' ) );
+		$this->assertTrue( Query_Resolver::has_any_error( null ) );
+		$this->assertTrue( Query_Resolver::has_any_error( 'nope' ) );
 
-		$this->assertFalse( Query_Resolver_Base::has_any_error( [ 'data' => [ 'x' => 1 ] ] ) );
-		$this->assertFalse( Query_Resolver_Base::has_any_error( [ 'errors' => [] ] ) );
+		$this->assertFalse( Query_Resolver::has_any_error( [ 'data' => [ 'x' => 1 ] ] ) );
+		$this->assertFalse( Query_Resolver::has_any_error( [ 'errors' => [] ] ) );
 
 		$this->assertTrue(
-			Query_Resolver_Base::has_any_error(
+			Query_Resolver::has_any_error(
 				[
 					'errors' => [
 						[ 'message' => 'anything' ],

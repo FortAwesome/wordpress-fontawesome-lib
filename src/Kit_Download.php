@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit(); // Exit if accessed directly.
 }
 
-use FontAwesomeLib\Query_Resolver_Base;
+use FontAwesomeLib\Query_Resolver;
 use WP_Error;
 
 class Kit_Download {
@@ -100,7 +100,7 @@ class Kit_Download {
 	 * Create a new Kit_Download by querying the Font Awesome metadata server
 	 * for the Font Awesome Kit corresponding to the given kit token.
 	 *
-	 * @param Query_Resolver_Base      $query_resolver
+	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider_Base $auth_token_provider
 	 * @param string                   $kit_token
 	 * @return KitDownload | WP_Error
@@ -172,7 +172,7 @@ class Kit_Download {
 	/**
 	 * Fetch the Kit_Download status from the Font Awesome API server.
 	 *
-	 * @param Query_Resolver_Base      $query_resolver
+	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider_Base $auth_token_provider
 	 * @return bool|WP_Error true if the resulting status is READY, WP_Error on error.
 	 */
@@ -223,7 +223,7 @@ class Kit_Download {
 	 * Handle a query to the Font Awesome API server.
 	 *
 	 * @param string                   $query
-	 * @param Query_Resolver_Base      $query_resolver
+	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider_Base $auth_token_provider
 	 * @return array|WP_Error
 	 */
@@ -273,7 +273,7 @@ class Kit_Download {
 			);
 		}
 
-		if ( Query_Resolver_Base::has_authorization_error( $decoded_body ) ) {
+		if ( Query_Resolver::has_authorization_error( $decoded_body ) ) {
 			return new WP_Error(
 				'fontawesome_api_unauthorized_query',
 				'This API token is not authorized to create a kit download.',
@@ -281,7 +281,7 @@ class Kit_Download {
 			);
 		}
 
-		if ( Query_Resolver_Base::has_any_error( $decoded_body ) ) {
+		if ( Query_Resolver::has_any_error( $decoded_body ) ) {
 			return new WP_Error(
 				'fontawesome_api_query_error',
 				'An error occurred while querying the Font Awesome API.',
@@ -407,7 +407,7 @@ class Kit_Download {
 	 * they will be overwritten if the "overwrite" option is true (the default). Otherwise, downloading
 	 * will be skipped and the existing directory path will be returned.
 	 *
-	 * @param Query_Resolver_Base      $query_resolver
+	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider_Base $auth_token_provider
 	 * @param string                   $destination_base_dir The destination base directory for kit assets to be written into. For example the basedir from `wp_upload_dir()`.
 	 * @return string|WP_Error on success returns the path to the directory containing the kit's assets for self-hosting. WP_Error on error.
