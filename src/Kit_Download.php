@@ -102,7 +102,7 @@ class Kit_Download {
 	 *
 	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider $auth_token_provider
-	 * @param string                   $kit_token
+	 * @param string              $kit_token
 	 * @return KitDownload | WP_Error
 	 */
 	public static function create_kit_download(
@@ -222,7 +222,7 @@ class Kit_Download {
 	/**
 	 * Handle a query to the Font Awesome API server.
 	 *
-	 * @param string                   $query
+	 * @param string              $query
 	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider $auth_token_provider
 	 * @return array|WP_Error
@@ -409,7 +409,7 @@ class Kit_Download {
 	 *
 	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider $auth_token_provider
-	 * @param string                   $destination_base_dir The destination base directory for kit assets to be written into. For example the basedir from `wp_upload_dir()`.
+	 * @param string              $destination_base_dir The destination base directory for kit assets to be written into. For example the basedir from `wp_upload_dir()`.
 	 * @return string|WP_Error on success returns the path to the directory containing the kit's assets for self-hosting. WP_Error on error.
 	 */
 	public function download_and_prepare_selfhosting(

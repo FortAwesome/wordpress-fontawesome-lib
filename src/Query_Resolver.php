@@ -26,11 +26,11 @@ class Query_Resolver {
 	}
 
 	/**
-	 * @param array                    $query_params
+	 * @param array               $query_params
 	 *  - query: string. The GraphQL query string.
 	 *  - variables: array (optional). The variables for the GraphQL query.
 	 * @param Auth_Token_Provider $auth_token_provider
-	 * @param array                    $opts
+	 * @param array               $opts
 	 * @return array|WP_Error The response from the Font Awesome API server, or WP_Error on failure.
 	 * See WP_Http::request() for information on return value.
 	 */
