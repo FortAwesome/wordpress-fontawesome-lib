@@ -101,7 +101,7 @@ class Kit_Download {
 	 * for the Font Awesome Kit corresponding to the given kit token.
 	 *
 	 * @param Query_Resolver      $query_resolver
-	 * @param Auth_Token_Provider_Base $auth_token_provider
+	 * @param Auth_Token_Provider $auth_token_provider
 	 * @param string                   $kit_token
 	 * @return KitDownload | WP_Error
 	 */
@@ -173,7 +173,7 @@ class Kit_Download {
 	 * Fetch the Kit_Download status from the Font Awesome API server.
 	 *
 	 * @param Query_Resolver      $query_resolver
-	 * @param Auth_Token_Provider_Base $auth_token_provider
+	 * @param Auth_Token_Provider $auth_token_provider
 	 * @return bool|WP_Error true if the resulting status is READY, WP_Error on error.
 	 */
 	public function poll( $query_resolver, $auth_token_provider ): bool|WP_Error {
@@ -224,7 +224,7 @@ class Kit_Download {
 	 *
 	 * @param string                   $query
 	 * @param Query_Resolver      $query_resolver
-	 * @param Auth_Token_Provider_Base $auth_token_provider
+	 * @param Auth_Token_Provider $auth_token_provider
 	 * @return array|WP_Error
 	 */
 	private static function handle_query(
@@ -408,7 +408,7 @@ class Kit_Download {
 	 * will be skipped and the existing directory path will be returned.
 	 *
 	 * @param Query_Resolver      $query_resolver
-	 * @param Auth_Token_Provider_Base $auth_token_provider
+	 * @param Auth_Token_Provider $auth_token_provider
 	 * @param string                   $destination_base_dir The destination base directory for kit assets to be written into. For example the basedir from `wp_upload_dir()`.
 	 * @return string|WP_Error on success returns the path to the directory containing the kit's assets for self-hosting. WP_Error on error.
 	 */

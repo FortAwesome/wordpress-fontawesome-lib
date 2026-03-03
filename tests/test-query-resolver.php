@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 use FontAwesomeLib\Query_Resolver;
-use FontAwesomeLib\Auth_Token_Provider_Base;
+use FontAwesomeLib\Auth_Token_Provider;
 
 /**
  * @covers \FontAwesomeLib\Query_Resolver
@@ -28,14 +28,14 @@ class Query_Resolver_Test extends TestCase {
 		];
 	}
 
-	private function create_mock_auth_token_provider_with_token( string $token ): Auth_Token_Provider_Base {
-		$mock = $this->createMock( Auth_Token_Provider_Base::class );
+	private function create_mock_auth_token_provider_with_token( string $token ): Auth_Token_Provider {
+		$mock = $this->createMock( Auth_Token_Provider::class );
 		$mock->method( 'get_access_token' )->willReturn( $token );
 		return $mock;
 	}
 
-	private function create_mock_auth_token_provider_with_error( WP_Error $error ): Auth_Token_Provider_Base {
-		$mock = $this->createMock( Auth_Token_Provider_Base::class );
+	private function create_mock_auth_token_provider_with_error( WP_Error $error ): Auth_Token_Provider {
+		$mock = $this->createMock( Auth_Token_Provider::class );
 		$mock->method( 'get_access_token' )->willReturn( $error );
 		return $mock;
 	}
@@ -106,7 +106,7 @@ class Query_Resolver_Test extends TestCase {
 
 	public function test_query_ignores_auth_when_option_set(): void {
 		$resolver = new Query_Resolver();
-		$auth     = $this->createMock( Auth_Token_Provider_Base::class );
+		$auth     = $this->createMock( Auth_Token_Provider::class );
 		$auth->expects( $this->never() )->method( 'get_access_token' );
 
 		add_filter(

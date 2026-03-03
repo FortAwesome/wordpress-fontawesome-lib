@@ -2,7 +2,7 @@
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 use FontAwesomeLib\Kit_Download;
-use FontAwesomeLib\Auth_Token_Provider_Base;
+use FontAwesomeLib\Auth_Token_Provider;
 use FontAwesomeLib\Query_Resolver;
 
 class Kit_DownloadTest extends TestCase
@@ -12,22 +12,22 @@ class Kit_DownloadTest extends TestCase
     const VALID_DOWNLOAD_URL = 'https://kit-downloads.fontawesome.com/abc123.zip';
 
     /**
-     * Create a mock Auth_Token_Provider_Base that returns a valid access token.
+     * Create a mock Auth_Token_Provider that returns a valid access token.
      */
-    private function create_mock_auth_token_provider(): Auth_Token_Provider_Base
+    private function create_mock_auth_token_provider(): Auth_Token_Provider
     {
-        $mock = $this->createMock(Auth_Token_Provider_Base::class);
+        $mock = $this->createMock(Auth_Token_Provider::class);
         $mock->method('get_access_token')
             ->willReturn('valid-access-token');
         return $mock;
     }
 
     /**
-     * Create a mock Auth_Token_Provider_Base that returns a WP_Error.
+     * Create a mock Auth_Token_Provider that returns a WP_Error.
      */
-    private function create_mock_auth_token_provider_with_error(): Auth_Token_Provider_Base
+    private function create_mock_auth_token_provider_with_error(): Auth_Token_Provider
     {
-        $mock = $this->createMock(Auth_Token_Provider_Base::class);
+        $mock = $this->createMock(Auth_Token_Provider::class);
         $mock->method('get_access_token')
             ->willReturn(new WP_Error('fontawesome_invalid_api_token', 'Invalid API token'));
         return $mock;

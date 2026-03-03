@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
-use FontAwesomeLib\Auth_Token_Provider_Base;
+use FontAwesomeLib\Auth_Token_Provider;
 
 /**
- * Tests for Auth_Token_Provider_Base.
+ * Tests for Auth_Token_Provider.
  *
  * Note: This class relies on WordPress functions (e.g. wp_remote_post(), untrailingslashit(), __()).
  * These tests intentionally avoid real HTTP requests by overriding post() in a test double.
  */
-class Auth_Token_Provider_BaseTest extends TestCase {
+class Auth_Token_ProviderTest extends TestCase {
 
 	const VALID_API_TOKEN = 'fa_test_api_token_123';
 	const VALID_ACCESS_TOKEN = 'fa_test_access_token_456';
@@ -22,10 +22,10 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 	 *
 	 * @param mixed $post_response Return value for post(): array|WP_Error
 	 * @param array $args_out Captured args passed to post()
-	 * @return Auth_Token_Provider_Base
+	 * @return Auth_Token_Provider
 	 */
-	private function create_provider_with_post_response( $post_response, array &$args_out = [] ): Auth_Token_Provider_Base {
-		return new class( self::VALID_API_TOKEN, $post_response, $args_out ) extends Auth_Token_Provider_Base {
+	private function create_provider_with_post_response( $post_response, array &$args_out = [] ): Auth_Token_Provider {
+		return new class( self::VALID_API_TOKEN, $post_response, $args_out ) extends Auth_Token_Provider {
 			private $post_response;
 			private $args_out;
 
@@ -47,10 +47,10 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 	 *
 	 * @param mixed $post_response
 	 * @param int   $count_out
-	 * @return Auth_Token_Provider_Base
+	 * @return Auth_Token_Provider
 	 */
-	private function create_provider_with_request_counter( $post_response, int &$count_out ): Auth_Token_Provider_Base {
-		return new class( self::VALID_API_TOKEN, $post_response, $count_out ) extends Auth_Token_Provider_Base {
+	private function create_provider_with_request_counter( $post_response, int &$count_out ): Auth_Token_Provider {
+		return new class( self::VALID_API_TOKEN, $post_response, $count_out ) extends Auth_Token_Provider {
 			private $post_response;
 			private $count_out;
 
@@ -110,7 +110,7 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 	// =========================================================================
 
 	public function test_get_api_token_returns_error_when_constructed_with_empty_string(): void {
-		$provider = new Auth_Token_Provider_Base( '' );
+		$provider = new Auth_Token_Provider( '' );
 
 		$result = $provider->get_api_token();
 
@@ -119,7 +119,7 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 	}
 
 	public function test_get_api_token_returns_error_when_constructed_with_non_string(): void {
-		$provider = new Auth_Token_Provider_Base( 12345 );
+		$provider = new Auth_Token_Provider( 12345 );
 
 		$result = $provider->get_api_token();
 
@@ -128,7 +128,7 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 	}
 
 	public function test_get_api_token_returns_string_for_valid_token(): void {
-		$provider = new Auth_Token_Provider_Base( self::VALID_API_TOKEN );
+		$provider = new Auth_Token_Provider( self::VALID_API_TOKEN );
 
 		$result = $provider->get_api_token();
 
@@ -150,7 +150,7 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 		    return $response;
 		}, 10, 3 );
 
-		$provider = new Auth_Token_Provider_Base( self::VALID_API_TOKEN, [ 'api_base_url' => 'https://example.test/api/' ] );
+		$provider = new Auth_Token_Provider( self::VALID_API_TOKEN, [ 'api_base_url' => 'https://example.test/api/' ] );
 
 		// Trigger a request so post() is used (and therefore api_base_url is used).
 		$token = $provider->request_access_token();
@@ -212,7 +212,7 @@ class Auth_Token_Provider_BaseTest extends TestCase {
 	// =========================================================================
 
 	public function test_request_access_token_returns_error_when_api_token_missing(): void {
-		$provider = new Auth_Token_Provider_Base( '' );
+		$provider = new Auth_Token_Provider( '' );
 
 		$result = $provider->request_access_token();
 
