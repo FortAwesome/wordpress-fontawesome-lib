@@ -22,7 +22,7 @@ class Query_Resolver_Base {
 	 * @param string $api_base_url The base URL for the Font Awesome API.
 	 */
 	public function __construct( $api_base_url = self::DEFAULT_API_BASE_URL ) {
-		$this->api_base_url = \untrailingslashit( $api_base_url );
+		$this->api_base_url = $api_base_url;
 	}
 
 	/**
@@ -139,6 +139,15 @@ class Query_Resolver_Base {
 		return false;
 	}
 
+	/**
+	 * Determine if the given decoded JSON body from a Font Awesome API response
+	 * contains any errors.
+	 *
+	 * If the given body is not an array, this returns true.
+	 *
+	 * @param mixed $decoded_body The decoded JSON body from the Font Awesome API response.
+	 * @return bool true if the response contains any errors, false otherwise.
+	 */
 	public static function has_any_error( $decoded_body ): bool {
 		if ( ! is_array( $decoded_body ) ) {
 			return true;
