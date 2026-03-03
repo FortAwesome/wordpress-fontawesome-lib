@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use WP_Error;
 
-class Auth_Token_Provider_Base {
+class Auth_Token_Provider {
 
 	protected $api_token = null;
 
@@ -17,10 +17,10 @@ class Auth_Token_Provider_Base {
 
 	protected $access_token_expiration_time_unix = null;
 
-	protected $api_base_url = Query_Resolver_Base::DEFAULT_API_BASE_URL;
+	protected $api_base_url = Query_Resolver::DEFAULT_API_BASE_URL;
 
 	/**
-	 * Construct a new Auth_Token_Provider_Base object, using the given Font Awesome API token.
+	 * Construct a new Auth_Token_Provider object, using the given Font Awesome API token.
 	 * A valid API token is required to obtain access tokens.
 	 *
 	 * @param string $api_token

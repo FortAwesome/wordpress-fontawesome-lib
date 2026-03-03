@@ -7,6 +7,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit(); // Exit if accessed directly.
 }
 
+/**
+ * This collection class manages a set of Family_Style objects. This is useful for representing a subset of family styles present in a subsetted Kit.
+ */
 class Family_Style_Collection {
 
 	protected $family_styles_by_prefix = [];

@@ -7,30 +7,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit(); // Exit if accessed directly.
 }
 
-use FontAwesomeLib\Base\Auth_Token_Provider_Base;
+use FontAwesomeLib\Base\Auth_Token_Provider;
 use WP_Error;
 
-class Query_Resolver_Base {
+class Query_Resolver {
 
 	const DEFAULT_API_BASE_URL = 'https://api.fontawesome.com';
 
 	protected $api_base_url = self::DEFAULT_API_BASE_URL;
 
 	/**
-	 * Construct a new Query_Resolver_Base object, using the given Font Awesome API base URL.
+	 * Construct a new Query_Resolver object, using the given Font Awesome API base URL.
 	 *
 	 * @param string $api_base_url The base URL for the Font Awesome API.
 	 */
 	public function __construct( $api_base_url = self::DEFAULT_API_BASE_URL ) {
-		$this->api_base_url = \untrailingslashit( $api_base_url );
+		$this->api_base_url = $api_base_url;
 	}
 
 	/**
-	 * @param array                    $query_params
+	 * @param array               $query_params
 	 *  - query: string. The GraphQL query string.
 	 *  - variables: array (optional). The variables for the GraphQL query.
-	 * @param Auth_Token_Provider_Base $auth_token_provider
-	 * @param array                    $opts
+	 * @param Auth_Token_Provider $auth_token_provider
+	 * @param array               $opts
 	 * @return array|WP_Error The response from the Font Awesome API server, or WP_Error on failure.
 	 * See WP_Http::request() for information on return value.
 	 */
@@ -139,6 +139,15 @@ class Query_Resolver_Base {
 		return false;
 	}
 
+	/**
+	 * Determine if the given decoded JSON body from a Font Awesome API response
+	 * contains any errors.
+	 *
+	 * If the given body is not an array, this returns true.
+	 *
+	 * @param mixed $decoded_body The decoded JSON body from the Font Awesome API response.
+	 * @return bool true if the response contains any errors, false otherwise.
+	 */
 	public static function has_any_error( $decoded_body ): bool {
 		if ( ! is_array( $decoded_body ) ) {
 			return true;
