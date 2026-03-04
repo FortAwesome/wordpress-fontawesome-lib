@@ -15,7 +15,10 @@
       "phpunit.xml.dist",
       "/tests",
       "/.git",
-      "/bin"
+      "/bin",
+      "/.github",
+      "AGENTS.md",
+      "DEVELOPMENT.md"
     ]
   },
   "require": {
