@@ -1,0 +1,11 @@
+AGENTS.md        export-ignore
+DEVELOPMENT.md   export-ignore
+/.github         export-ignore
+/.git            export-ignore
+/tests           export-ignore
+/bin             export-ignore
+phpunit.xml.dist export-ignore
+phpcs.xml.dist   export-ignore
+.phpactor        export-ignore
+.wp-env.json     export-ignore
+.gitignore       export-ignore
