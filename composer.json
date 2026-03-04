@@ -1,6 +1,6 @@
 {
   "name": "fortawesome/wordpress-fontawesome-lib",
-  "description": "Library for WordPress Font Awesome",
+  "description": "Font Awesome Utility Library for WordPress",
   "type": "library",
   "license": "GPL-2.0-or-later",
   "autoload": {
