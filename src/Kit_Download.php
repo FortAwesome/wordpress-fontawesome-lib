@@ -495,7 +495,7 @@ class Kit_Download {
 		return $kit_assets_selfhosting_dir_path;
 	}
 
-	public function kit_assets_selfhosting_dir_path(
+	private function kit_assets_selfhosting_dir_path(
 		$destination_base_dir,
 	): string|WP_Error {
 		if ( ! is_string( $destination_base_dir ) || '' === $destination_base_dir ) {
