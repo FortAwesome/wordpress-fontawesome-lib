@@ -32,6 +32,7 @@ class Svg_Icon {
 	 * This is significant because an icon with a null secondary layer is considered a monotone icon,
 	 * whereas an icon with a secondary layer that is an empty string is considered a duotone icon with
 	 * an empty secondary layer.
+	 * @since 0.1.0
 	 */
 	public function __construct( $icon_data ) {
 		if ( ! is_array( $icon_data ) ) {
@@ -71,6 +72,7 @@ class Svg_Icon {
 	 * @param array $opts (optional) options for stringification.
 	 *  - class: string (optional). An optional CSS class to add to the SVG element.
 	 * @return string The SVG string representation of this icon.
+	 * @since 0.1.0
 	 */
 	public function stringify( $opts = [] ): string {
 		$svg = sprintf(
@@ -113,6 +115,7 @@ class Svg_Icon {
 	 * Returns true if this icon is a duotone icon (i.e., has both primary and secondary paths), false otherwise.
 	 *
 	 * @return bool
+	 * @since 0.1.0
 	 */
 	public function is_duotone(): bool {
 		return null !== $this->secondary_path;

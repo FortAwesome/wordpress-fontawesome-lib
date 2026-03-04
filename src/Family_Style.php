@@ -30,6 +30,7 @@ class Family_Style {
 	 * 4. As of Font Awesome 7, the family for monotone custom icons is "kit", and the family for duotone custom icons is "kit-duotone". The style for both is "custom".
 	 * @param string $style The Font Awesome style (e.g., "solid", "regular").
 	 * @param string $short_prefix_id The short prefix ID (e.g., "fas", "far", "fasl", "fak").
+	 * @since 0.1.0
 	 */
 	public function __construct( $family, $style, $short_prefix_id ) {
 		$this->family = $family;
@@ -40,7 +41,8 @@ class Family_Style {
 	/**
 	 * Get the Font Awesome family (e.g., "classic", "sharp", "notdog-duo").
 	 *
-	 * @@return string family
+	 * @return string family
+	 * @since 0.1.0
 	 */
 	public function family(): string {
 		return $this->family;
@@ -49,7 +51,8 @@ class Family_Style {
 	/**
 	 * Get the Font Awesome style (e.g., "solid", "regular", "semibold").
 	 *
-	 * @@return string style
+	 * @return string style
+	 * @since 0.1.0
 	 */
 	public function style(): string {
 		return $this->style;
@@ -58,7 +61,8 @@ class Family_Style {
 	/**
 	 * Get the Font Awesome short_prefix_id (aka "prefix") (e.g., "fas", "fasl", "fak").
 	 *
-	 * @@return string short_prefix_id
+	 * @return string short_prefix_id
+	 * @since 0.1.0
 	 */
 	public function short_prefix_id(): string {
 		return $this->short_prefix_id;
@@ -69,6 +73,7 @@ class Family_Style {
 	 *
 	 * @see Family_Style::map_family_style_to_shorthand()
 	 * @return string shorthand
+	 * @since 0.1.0
 	 */
 	public function shorthand(): string {
 		return self::map_family_and_style_to_shorthand(
@@ -82,6 +87,7 @@ class Family_Style {
 	 *
 	 * @see Family_Style::map_family_style_to_asset_file_stem()
 	 * @return string asset file stem
+	 * @since 0.1.0
 	 */
 	public function asset_file_stem(): string {
 		return self::map_family_and_style_to_asset_file_stem(
@@ -95,6 +101,7 @@ class Family_Style {
 	 *
 	 * @see Family_Style::map_family_style_to_label()
 	 * @return string label
+	 * @since 0.1.0
 	 */
 	public function label(): string {
 		return self::map_family_and_style_to_label( $this->family, $this->style );
@@ -104,6 +111,7 @@ class Family_Style {
 	 * Convert this Family_Style to an associative array.
 	 *
 	 * @return array{family: string, style: string, prefix: string, shorthand: string, asset_file_stem: string, label: string}
+	 * @since 0.1.0
 	 */
 	public function to_array(): array {
 		return [
@@ -140,6 +148,7 @@ class Family_Style {
 	 * @param string $family The Font Awesome family (e.g., "sharp", "classic").
 	 * @param string $style The Font Awesome style (e.g., "solid", "regular").
 	 * @return string The normalized family style shorthand (e.g., "sharp-solid", "solid", "duotone")
+	 * @since 0.1.0
 	 */
 	public static function map_family_and_style_to_shorthand(
 		$family,
@@ -171,6 +180,7 @@ class Family_Style {
 	 * @param string $family The Font Awesome family (e.g., "sharp", "classic").
 	 * @param string $style The Font Awesome style (e.g., "solid", "regular").
 	 * @return string The human readable label for the given family style (e.g., "Thin", "Sharp Solid", "Duotone Regular", "Brands").
+	 * @since 0.1.0
 	 */
 	public static function map_family_and_style_to_label(
 		$family,
@@ -199,6 +209,7 @@ class Family_Style {
 	 * @param string $family The Font Awesome family (e.g., "sharp", "classic").
 	 * @param string $style The Font Awesome style (e.g., "solid", "regular").
 	 * @return string The asset file stem for the given family style (e.g., "sharp-solid", "solid", "duotone", "custom-icons", "custom-icons-duotone").
+	 * @since 0.1.0
 	 */
 	public static function map_family_and_style_to_asset_file_stem(
 		$family,
@@ -227,6 +238,7 @@ class Family_Style {
 	 * A static helper to get the family style info for monotone kit custom icons.
 	 *
 	 * @return Family_Style
+	 * @since 0.1.0
 	 */
 	public static function kit_custom_family_style() {
 		return new Family_Style( 'kit', 'custom', 'fak' );
@@ -236,6 +248,7 @@ class Family_Style {
 	 * A static helper to get the family style info for duotone kit custom icons.
 	 *
 	 * @return Family_Style
+	 * @since 0.1.0
 	 */
 	public static function kit_duotone_custom_family_style() {
 		return new Family_Style( 'kit-duotone', 'custom', 'fakd' );

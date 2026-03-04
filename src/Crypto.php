@@ -24,6 +24,7 @@ class Crypto {
 	 * @param array $params An associative array with the following keys:
 	 *  - key: string. The encryption key.
 	 *  - salt: string. The encryption salt.
+	 * @since 0.1.0
 	 */
 	public function __construct( $params ) {
 		if (
@@ -42,6 +43,7 @@ class Crypto {
 	 * Checks if the current environment is compatible with the Crypto class.
 	 *
 	 * @return bool|WP_Error True if compatible, WP_Error otherwise.
+	 * @since 0.1.0
 	 */
 	public function is_compatible(): bool|WP_Error {
 		if (
@@ -127,6 +129,9 @@ class Crypto {
 	 * The method is patterned after the Data_Encryption::encrypt() method
 	 * in the Site Kit by Google plugin, version 1.4.0, licensed under Apache v2.0.
 	 * https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * @return string|WP_Error Encrypted string on success, WP_Error on failure.
+	 * @since 0.1.0
 	 */
 	public function encrypt( $data ): string|WP_Error {
 		$prepare_result = $this->prepare();
@@ -167,6 +172,7 @@ class Crypto {
 	 *
 	 * @param string $data base64 encoded data to decrypt.
 	 * @return string|WP_Error Decrypted string on success, WP_Error on failure.
+	 * @since 0.1.0
 	 */
 	public function decrypt( $data ): string|WP_Error {
 		$prepare_result = $this->prepare();

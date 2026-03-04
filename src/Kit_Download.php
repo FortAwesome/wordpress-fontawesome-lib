@@ -26,6 +26,7 @@ class Kit_Download {
 	 *
 	 * @param string $kit_token
 	 * @param string $build_id
+	 * @since 0.1.0
 	 */
 	public function __construct( $kit_token, $build_id ) {
 		$this->kit_token = $kit_token;
@@ -36,6 +37,7 @@ class Kit_Download {
 	 * Get the build ID.
 	 *
 	 * @return string
+	 * @since 0.1.0
 	 */
 	public function get_build_id(): string {
 		return $this->build_id;
@@ -45,6 +47,7 @@ class Kit_Download {
 	 * Get the kit download's status.
 	 *
 	 * @return string one of READY, FAILED, PENDING
+	 * @since 0.1.0
 	 */
 	public function get_status(): string {
 		return $this->status;
@@ -55,6 +58,7 @@ class Kit_Download {
 	 * Otherwise, it is null.
 	 *
 	 * @return string one of READY, FAILED, PENDING
+	 * @since 0.1.0
 	 */
 	public function get_url(): ?string {
 		return $this->url;
@@ -64,6 +68,7 @@ class Kit_Download {
 	 * Get the kit token associated with this download.
 	 *
 	 * @return string
+	 * @since 0.1.0
 	 */
 	public function get_kit_token(): string {
 		return $this->kit_token;
@@ -73,6 +78,7 @@ class Kit_Download {
 	 * Convenience method for checking that the status is READY.
 	 *
 	 * @return bool
+	 * @since 0.1.0
 	 */
 	public function is_ready(): bool {
 		return self::STATUS_READY === $this->status;
@@ -82,6 +88,7 @@ class Kit_Download {
 	 * Convenience method for checking that the status is FAILED.
 	 *
 	 * @return bool
+	 * @since 0.1.0
 	 */
 	public function is_failed(): bool {
 		return self::STATUS_FAILED === $this->status;
@@ -91,6 +98,7 @@ class Kit_Download {
 	 * Convenience method for checking that the status is PENDING.
 	 *
 	 * @return bool
+	 * @since 0.1.0
 	 */
 	public function is_pending(): bool {
 		return self::STATUS_PENDING === $this->status;
@@ -104,6 +112,7 @@ class Kit_Download {
 	 * @param Auth_Token_Provider $auth_token_provider
 	 * @param string              $kit_token
 	 * @return KitDownload | WP_Error
+	 * @since 0.1.0
 	 */
 	public static function create_kit_download(
 		$query_resolver,
@@ -175,6 +184,7 @@ class Kit_Download {
 	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider $auth_token_provider
 	 * @return bool|WP_Error true if the resulting status is READY, WP_Error on error.
+	 * @since 0.1.0
 	 */
 	public function poll( $query_resolver, $auth_token_provider ): bool|WP_Error {
 		if ( $this->is_ready() ) {
@@ -411,6 +421,7 @@ class Kit_Download {
 	 * @param Auth_Token_Provider $auth_token_provider
 	 * @param string              $destination_base_dir The destination base directory for kit assets to be written into. For example the basedir from `wp_upload_dir()`.
 	 * @return string|WP_Error on success returns the path to the directory containing the kit's assets for self-hosting. WP_Error on error.
+	 * @since 0.1.0
 	 */
 	public function download_and_prepare_selfhosting(
 		$query_resolver,
