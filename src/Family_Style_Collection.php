@@ -18,6 +18,7 @@ class Family_Style_Collection {
 	 * Construct a new Family_Style_Collection object, using the given array of Family_Style objects or associative arrays.
 	 *
 	 * @param Family_Style[]|array[] $family_styles An optional array of Family_Style objects or associative arrays with keys 'family', 'style', and 'prefix'
+	 * @since 0.1.0
 	 */
 	public function __construct( $family_styles = [] ) {
 		if ( ! is_array( $family_styles ) ) {
@@ -32,6 +33,7 @@ class Family_Style_Collection {
 	 * @param Family_Style|array $family_style A Family_Style object or an associative array with keys 'family', 'style', and 'prefix'
 	 * that are valid for creating a new Family_Style object.
 	 * @see Family_Style::__construct
+	 * @since 0.1.0
 	 */
 	public function add_family_style( $family_style ): void {
 		if ( $family_style instanceof Family_Style ) {
@@ -54,6 +56,7 @@ class Family_Style_Collection {
 	 *
 	 * @param Family_Style|array|string $family_style A Family_Style object, an associative array with the key 'prefix',
 	 * or a string representing the short prefix ID of the Family_Style to remove.
+	 * @since 0.1.0
 	 */
 	public function remove_family_style( $family_style ): void {
 		if ( $family_style instanceof Family_Style ) {
@@ -70,15 +73,21 @@ class Family_Style_Collection {
 	}
 
 	/**
+	 * Get an array of all Family_Style objects in the collection.
+	 *
 	 * @return Family_Style[] An array of all Family_Style objects in the collection.
+	 * @since 0.1.0
 	 */
 	public function family_styles(): array {
 		return array_values( $this->family_styles_by_prefix );
 	}
 
 	/**
+	 * Get the family styles in the collection as an array of associative arrays, ready for JSON serialization.
+	 *
 	 * @return array an array of associative arrays representing all Family_Style objects in the collection,
 	 * ready for JSON serialization.
+	 * @since 0.1.0
 	 */
 	public function family_styles_for_json(): array {
 		return array_map(function ( Family_Style $family_style ) {
@@ -111,8 +120,11 @@ class Family_Style_Collection {
 	}
 
 	/**
+	 * Get a Family_Style object from the collection by its short prefix ID.
+	 *
 	 * @param string $short_prefix_id The short prefix ID of the Family_Style to retrieve.
 	 * @return Family_Style|null The Family_Style object with the given short prefix ID, or null if not found.
+	 * @since 0.1.0
 	 */
 	public function get_by_short_prefix_id( $short_prefix_id ): ?Family_Style {
 		if ( ! is_string( $short_prefix_id ) ) {

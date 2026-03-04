@@ -23,6 +23,109 @@ class Kit_DownloadTest extends TestCase
     }
 
     /**
+     * Build a minimal kit zip payload in a temp file and return:
+     * - `zip_path` (string): absolute path to the zip file
+     * - `entries` (array): list of entries included
+     */
+    private function build_minimal_kit_zip_fixture(): array
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive not available in this environment.');
+        }
+
+        $tmp = tempnam(sys_get_temp_dir(), 'fa-kit-zip-');
+        if (false === $tmp) {
+            $this->fail('Failed to create temp file for zip fixture.');
+        }
+
+        // ZipArchive expects a .zip extension in some environments/tools.
+        $zip_path = $tmp . '.zip';
+        rename($tmp, $zip_path);
+
+        $zip = new ZipArchive();
+
+        $open = $zip->open($zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        if (true !== $open) {
+            $this->fail('Failed to open zip fixture for writing.');
+        }
+
+        // `Kit_Download::prepare_selfhosting()` only extracts entries starting with css/, webfonts/, metadata/
+        // `Kit_Download::build_svg_objects_and_metadata()` expects metadata/icon-families.json to exist and be readable.
+        $entries = [
+            'css/all.css' => "/* test fixture */\n",
+            'webfonts/fa-solid-900.woff2' => "FAKE-WOFF2",
+            'metadata/icons.json' => json_encode(['fixture' => true]),
+            'metadata/icon-families.json' => json_encode([
+                'test-icon' => [
+                    'label' => 'Test Icon',
+                    'unicode' => 'f000',
+                    'svgs' => [
+                        'classic' => [
+                            'solid' => [
+                                'width' => 1,
+                                'height' => 1,
+                                'path' => 'M0 0h1v1H0z',
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ];
+
+        foreach ($entries as $name => $contents) {
+            $zip->addFromString($name, $contents);
+        }
+
+        $zip->close();
+
+        return [
+            'zip_path' => $zip_path,
+            'entries' => array_keys($entries),
+        ];
+    }
+
+    /**
+     * Intercept the HTTP download to return our kit zip fixture.
+     *
+     * `Kit_Download::download()` uses:
+     *   wp_remote_get($this->url, ['stream' => true, 'filename' => $zip_file_path])
+     *
+     * So we copy our fixture into the requested `filename` and respond with a 200.
+     */
+    private function intercept_kit_zip_download(string $expected_url, string $zip_fixture_path): void
+    {
+        add_filter('pre_http_request', function ($preempt, $args, $url) use ($expected_url, $zip_fixture_path) {
+            if ($url !== $expected_url) {
+                return $preempt;
+            }
+
+            if (!is_array($args) || empty($args['filename']) || !is_string($args['filename'])) {
+                return new WP_Error('fontawesome_test_missing_filename', 'Expected streaming download with a filename.');
+            }
+
+            $dest = $args['filename'];
+
+            // Ensure target dir exists.
+            $dir = dirname($dest);
+            if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
+                return new WP_Error('fontawesome_test_mkdir_failed', 'Failed creating destination directory for streamed zip.');
+            }
+
+            if (!copy($zip_fixture_path, $dest)) {
+                return new WP_Error('fontawesome_test_copy_zip_failed', 'Failed copying zip fixture to streaming destination.');
+            }
+
+            return [
+                'headers' => [],
+                'body' => '',
+                'response' => ['code' => 200, 'message' => 'OK'],
+                'cookies' => [],
+                'filename' => $dest,
+            ];
+        }, 10, 3);
+    }
+
+    /**
      * Create a mock Auth_Token_Provider that returns a WP_Error.
      */
     private function create_mock_auth_token_provider_with_error(): Auth_Token_Provider
@@ -604,59 +707,105 @@ class Kit_DownloadTest extends TestCase
     }
 
     // =========================================================================
-    // kit_assets_selfhosting_dir_path Tests
+    // download_and_prepare_selfhosting Integration Tests
     // =========================================================================
 
-    public function test_kit_assets_selfhosting_dir_path_returns_correct_path()
+    public function test_download_and_prepare_selfhosting_downloads_and_extracts_and_returns_expected_path()
     {
-        $kit_download = new Kit_Download(self::VALID_KIT_TOKEN, self::VALID_BUILD_ID);
-        $base_dir = '/var/www/wp-content/uploads';
+        // Arrange: create a "ready" Kit_Download via the public factory.
+        $create_response = $this->build_create_kit_download_response(
+            self::VALID_BUILD_ID,
+            Kit_Download::STATUS_READY,
+            self::VALID_DOWNLOAD_URL
+        );
+        $create_query_resolver = $this->create_mock_query_resolver($create_response);
+        $auth_token_provider = $this->create_mock_auth_token_provider();
 
-        $result = $kit_download->kit_assets_selfhosting_dir_path($base_dir);
+        $kit_download = Kit_Download::create_kit_download(
+            $create_query_resolver,
+            $auth_token_provider,
+            self::VALID_KIT_TOKEN
+        );
 
-        $expected = '/var/www/wp-content/uploads/fontawesome-kit/' . self::VALID_KIT_TOKEN . '/' . self::VALID_BUILD_ID . '/';
-        $this->assertEquals($expected, $result);
-    }
+        $this->assertInstanceOf(Kit_Download::class, $kit_download);
+        $this->assertTrue($kit_download->is_ready());
+        $this->assertEquals(self::VALID_DOWNLOAD_URL, $kit_download->get_url());
 
-    public function test_kit_assets_selfhosting_dir_path_handles_trailing_slash()
-    {
-        $kit_download = new Kit_Download(self::VALID_KIT_TOKEN, self::VALID_BUILD_ID);
-        $base_dir = '/var/www/wp-content/uploads/';
+        // Arrange: create a minimal zip fixture and intercept the HTTP download.
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $this->intercept_kit_zip_download(self::VALID_DOWNLOAD_URL, $zip_fixture['zip_path']);
 
-        $result = $kit_download->kit_assets_selfhosting_dir_path($base_dir);
+        // Arrange: mock the metadata query to return whatever minimum shape is required.
+        // If prepare_selfhosting/take_kit_metadata expects more, update this fixture accordingly.
+        $metadata_response = [
+            'response' => ['code' => 200],
+            'body' => json_encode([
+                'data' => [
+                    'me' => [
+                        'kit' => [
+                            'token' => self::VALID_KIT_TOKEN,
+                            'licenseSelected' => 'free',
+                            'release' => [
+                                'version' => '6.0.0',
+                                'familyStyles' => [
+                                    [
+                                        'family' => 'classic',
+                                        'style' => 'solid',
+                                        'prefix' => 'fas',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ];
+        $metadata_query_resolver = $this->create_mock_query_resolver($metadata_response);
 
-        $expected = '/var/www/wp-content/uploads/fontawesome-kit/' . self::VALID_KIT_TOKEN . '/' . self::VALID_BUILD_ID . '/';
-        $this->assertEquals($expected, $result);
-    }
+        $uploads = wp_upload_dir();
+        $this->assertIsArray($uploads);
+        $this->assertArrayHasKey('basedir', $uploads);
+        $this->assertTrue(is_string($uploads['basedir']) && '' !== $uploads['basedir']);
 
-    public function test_kit_assets_selfhosting_dir_path_returns_error_for_empty_string()
-    {
-        $kit_download = new Kit_Download(self::VALID_KIT_TOKEN, self::VALID_BUILD_ID);
+        $destination_base_dir = $uploads['basedir'];
 
-        $result = $kit_download->kit_assets_selfhosting_dir_path('');
+        // Act
+        $result = $kit_download->download_and_prepare_selfhosting(
+            $metadata_query_resolver,
+            $auth_token_provider,
+            $destination_base_dir,
+            ['overwrite' => true]
+        );
 
-        $this->assertTrue(is_wp_error($result));
-        $this->assertEquals('fontawesome_invalid_kit_assets_selfhosting_dir_path', $result->get_error_code());
-    }
+        // Assert
+        $this->assertFalse(is_wp_error($result), is_wp_error($result) ? $result->get_error_message() : '');
+        $this->assertIsString($result);
 
-    public function test_kit_assets_selfhosting_dir_path_returns_error_for_non_string()
-    {
-        $kit_download = new Kit_Download(self::VALID_KIT_TOKEN, self::VALID_BUILD_ID);
+        $expected_dir =
+            trailingslashit($destination_base_dir) .
+            'fontawesome-kit/' .
+            self::VALID_KIT_TOKEN .
+            '/' .
+            self::VALID_BUILD_ID .
+            '/';
 
-        $result = $kit_download->kit_assets_selfhosting_dir_path(12345);
+        $this->assertEquals($expected_dir, $result);
 
-        $this->assertTrue(is_wp_error($result));
-        $this->assertEquals('fontawesome_invalid_kit_assets_selfhosting_dir_path', $result->get_error_code());
-    }
+        // Assert extracted directories exist
+        $this->assertDirectoryExists($expected_dir);
+        $this->assertDirectoryExists($expected_dir . 'css/');
+        $this->assertDirectoryExists($expected_dir . 'webfonts/');
+        $this->assertDirectoryExists($expected_dir . 'metadata/');
 
-    public function test_kit_assets_selfhosting_dir_path_returns_error_for_null()
-    {
-        $kit_download = new Kit_Download(self::VALID_KIT_TOKEN, self::VALID_BUILD_ID);
-
-        $result = $kit_download->kit_assets_selfhosting_dir_path(null);
-
-        $this->assertTrue(is_wp_error($result));
-        $this->assertEquals('fontawesome_invalid_kit_assets_selfhosting_dir_path', $result->get_error_code());
+        // Assert key expected outputs exist.
+        //
+        // The selfhosting preparation writes `metadata/kit.json` based on the metadata query response,
+        // and it generates family-style metadata JSON files (e.g. `metadata/fas.json`) derived from
+        // `metadata/icon-families.json` in the downloaded kit zip. It does NOT write `metadata/icons.json`.
+        $this->assertFileExists($expected_dir . 'css/all.css');
+        $this->assertFileExists($expected_dir . 'webfonts/fa-solid-900.woff2');
+        $this->assertFileExists($expected_dir . 'metadata/kit.json');
+        $this->assertFileExists($expected_dir . 'metadata/solid.json');
     }
 
     // =========================================================================

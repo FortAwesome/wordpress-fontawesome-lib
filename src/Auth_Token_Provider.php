@@ -26,6 +26,7 @@ class Auth_Token_Provider {
 	 * @param string $api_token
 	 * @param array  $opts Optional settings:
 	 *    - api_base_url: string. The base URL for the Font Awesome API.
+	 * @since 0.1.0
 	 */
 	public function __construct( $api_token, $opts = [] ) {
 		if ( ! is_string( $api_token ) || '' === $api_token ) {
@@ -44,7 +45,10 @@ class Auth_Token_Provider {
 	}
 
 	/**
+	 * Get the API token provided to this object at construction.
+	 *
 	 * @return string|WP_Error
+	 * @since 0.1.0
 	 */
 	public function get_api_token(): string|WP_Error {
 		if ( ! is_string( $this->api_token ) || '' === $this->api_token ) {
@@ -64,6 +68,7 @@ class Auth_Token_Provider {
 	 * Get a current valid access token, refreshing it if necessary.
 	 *
 	 * @return string|WP_Error a current valid access token or WP_Error on failure.
+	 * @since 0.1.0
 	 */
 	public function get_access_token(): string|WP_Error {
 		$api_token = $this->get_api_token();
@@ -94,6 +99,7 @@ class Auth_Token_Provider {
 	 * Get the expiration time of the current access token as a Unix timestamp.
 	 *
 	 * @return int|null The expiration time as a Unix timestamp, or null if no access token is available.
+	 * @since 0.1.0
 	 */
 	public function get_access_token_expiration_time_unix(): ?int {
 		return $this->access_token_expiration_time_unix;
@@ -105,6 +111,7 @@ class Auth_Token_Provider {
 	 * returns the new access token.
 	 *
 	 * @return string|WP_Error The new access token or WP_Error on failure.
+	 * @since 0.1.0
 	 */
 	public function request_access_token(): string|WP_Error {
 		if ( ! is_string( $this->api_token ) ) {

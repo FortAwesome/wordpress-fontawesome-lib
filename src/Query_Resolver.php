@@ -20,6 +20,7 @@ class Query_Resolver {
 	 * Construct a new Query_Resolver object, using the given Font Awesome API base URL.
 	 *
 	 * @param string $api_base_url The base URL for the Font Awesome API.
+	 * @since 0.1.0
 	 */
 	public function __construct( $api_base_url = self::DEFAULT_API_BASE_URL ) {
 		$this->api_base_url = $api_base_url;
@@ -33,6 +34,7 @@ class Query_Resolver {
 	 * @param array               $opts
 	 * @return array|WP_Error The response from the Font Awesome API server, or WP_Error on failure.
 	 * See WP_Http::request() for information on return value.
+	 * @since 0.1.0
 	 */
 	public function query(
 		$query_params,
@@ -116,6 +118,7 @@ class Query_Resolver {
 	 *
 	 * @param mixed $decoded_body The decoded JSON body from the Font Awesome API response.
 	 * @return bool true if the response indicates an authorization error, false otherwise.
+	 * @since 0.1.0
 	 */
 	public static function has_authorization_error( $decoded_body ): bool {
 		if ( ! is_array( $decoded_body ) ) {
@@ -147,6 +150,7 @@ class Query_Resolver {
 	 *
 	 * @param mixed $decoded_body The decoded JSON body from the Font Awesome API response.
 	 * @return bool true if the response contains any errors, false otherwise.
+	 * @since 0.1.0
 	 */
 	public static function has_any_error( $decoded_body ): bool {
 		if ( ! is_array( $decoded_body ) ) {
