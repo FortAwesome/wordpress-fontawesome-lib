@@ -10,6 +10,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 use FontAwesomeLib\Query_Resolver;
 use WP_Error;
 
+const ZIP_OPEN_STATUS_LOOKUP = array(
+			\ZipArchive::ER_EXISTS => "File already exists.",
+			\ZipArchive::ER_INCONS => "Zip archive inconsistent.",
+			\ZipArchive::ER_INVAL  => "Invalid argument.",
+			\ZipArchive::ER_MEMORY => "Malloc failure.",
+			\ZipArchive::ER_NOENT  => "No such file.",
+			\ZipArchive::ER_NOZIP  => "Not a zip archive.",
+			\ZipArchive::ER_OPEN   => "Can't open file.",
+			\ZipArchive::ER_READ   => "Read error.",
+			\ZipArchive::ER_SEEK   => "Seek error.",
+		);
+
 class Kit_Download {
 
 	public const STATUS_READY = 'READY';
@@ -572,16 +584,32 @@ class Kit_Download {
 		$dirs_for_extraction = [ 'css', 'webfonts', 'metadata' ];
 
 		if (
-			! $wp_filesystem->is_readable( $zip_file_path ) ||
-			$zip->open( $zip_file_path ) !== true
+			! $wp_filesystem->is_readable( $zip_file_path )
 		) {
 			return new WP_Error(
-				'fontawesome_invalid_zip_file',
+				'fontawesome_zip_file_not_readable',
 				__(
 					'The Font Awesome kit zip file is not readable.',
 					'wordpress-fontawesome-lib',
 				),
 				[ 'zip_file_path' => $zip_file_path ],
+			);
+		}
+
+		$zip_open_result = $zip->open( $zip_file_path, \ZipArchive::RDONLY );
+
+		if (
+			$zip_open_result !== true
+		) {
+			$zip_open_failure_reason = ZIP_OPEN_STATUS_LOOKUP[$zip_open_result] ?? "unknown";
+
+			return new WP_Error(
+				'fontawesome_zip_file_open_failure',
+				sprintf(
+					/* translators: 1: Plugin name */
+					__( 'The Font Awesome kit zip file failed to open with reason: %1$s', 'wordpress-fontawesome-lib' ),
+					$zip_open_failure_reason
+				)
 			);
 		}
 
