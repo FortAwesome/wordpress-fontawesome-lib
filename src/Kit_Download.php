@@ -22,6 +22,9 @@ const ZIP_OPEN_STATUS_LOOKUP = array(
 			\ZipArchive::ER_SEEK   => "Seek error.",
 		);
 
+// 50 MB.
+const DEFAULT_MAX_KIT_ZIP_BYTES = 50 * 1024 * 1024;
+
 class Kit_Download {
 
 	public const STATUS_READY = 'READY';
@@ -416,6 +419,32 @@ class Kit_Download {
 					'Downloaded Font Awesome kit zip file is not valid.',
 					'wordpress-fontawesome-lib',
 				),
+			);
+		}
+
+		$max_zip_bytes = apply_filters(
+			'fontawesome_lib_max_kit_zip_bytes',
+			DEFAULT_MAX_KIT_ZIP_BYTES
+		);
+
+		$zip_file_size = $wp_filesystem->size( $zip_file_path );
+
+		if ( $zip_file_size > $max_zip_bytes ) {
+			return new WP_Error(
+				'fontawesome_api_kit_download_too_large',
+				sprintf(
+					/* translators: 1: Downloaded zip file size in bytes, 2: Maximum allowed size in bytes */
+					__(
+						'The downloaded Font Awesome kit zip file size of %1$s bytes exceeds the maximum allowed size of %2$s bytes. This can be changed by using the "fontawesome_lib_max_kit_zip_bytes" filter.',
+						'wordpress-fontawesome-lib',
+					),
+					$zip_file_size,
+					$max_zip_bytes,
+				),
+				[
+					'zip_file_size' => $zip_file_size,
+					'max_zip_bytes' => $max_zip_bytes,
+				],
 			);
 		}
 
