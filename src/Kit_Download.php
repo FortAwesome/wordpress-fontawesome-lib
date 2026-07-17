@@ -25,6 +25,10 @@ const ZIP_OPEN_STATUS_LOOKUP = array(
 // 50 MB.
 const DEFAULT_MAX_KIT_ZIP_BYTES = 50 * 1024 * 1024;
 
+// The maximum number of icons (across all family styles, including both
+// official and custom icons) allowed in a Kit download by default.
+const DEFAULT_MAX_ICON_COUNT = 5000;
+
 class Kit_Download {
 
 	public const STATUS_READY = 'READY';
@@ -461,6 +465,10 @@ class Kit_Download {
 	 * @param Query_Resolver      $query_resolver
 	 * @param Auth_Token_Provider $auth_token_provider
 	 * @param string              $destination_base_dir The destination base directory for kit assets to be written into. For example the basedir from `wp_upload_dir()`.
+	 * @param array               $opts Options. Supported keys:
+	 *   - 'overwrite' (bool) Whether to overwrite existing kit assets. Default true.
+	 *   - 'max_icon_count' (int) The maximum number of icons allowed in the kit. Defaults to DEFAULT_MAX_ICON_COUNT.
+	 *     This value may be further overridden by the `fontawesome_lib_max_icon_count` filter.
 	 * @return string|WP_Error on success returns the path to the directory containing the kit's assets for self-hosting. WP_Error on error.
 	 * @since 0.1.0
 	 */
@@ -500,6 +508,20 @@ class Kit_Download {
 			$should_overwrite = false;
 		}
 
+		$max_icon_count = DEFAULT_MAX_ICON_COUNT;
+
+		if (
+			is_array( $opts ) &&
+			isset( $opts['max_icon_count'] ) &&
+			is_numeric( $opts['max_icon_count'] )
+		) {
+			$max_icon_count = intval( $opts['max_icon_count'] );
+		}
+
+		$max_icon_count = intval(
+			apply_filters( 'fontawesome_lib_max_icon_count', $max_icon_count ),
+		);
+
 		if (
 			! $should_overwrite &&
 			$wp_filesystem->is_dir( $kit_assets_selfhosting_dir_path ) &&
@@ -528,6 +550,7 @@ class Kit_Download {
 			$zip_temp_dir,
 			$kit_assets_selfhosting_dir_path,
 			$fa_release_metadata,
+			$max_icon_count,
 		);
 
 		if ( is_wp_error( $prepare_selfhosting_result ) ) {
@@ -573,6 +596,7 @@ class Kit_Download {
 		$zip_temp_dir,
 		$kit_assets_selfhosting_dir_path,
 		$fa_release_metadata,
+		$max_icon_count,
 	): true|WP_Error {
 		if (
 			! $wp_filesystem->is_dir( $zip_temp_dir ) ||
@@ -712,6 +736,7 @@ class Kit_Download {
 			$zip_temp_dir,
 			$staging_dir,
 			$family_styles_metadata,
+			$max_icon_count,
 		);
 
 		if ( is_wp_error( $included_family_styles ) ) {
@@ -760,6 +785,7 @@ class Kit_Download {
 		$source_base_dir,
 		$assets_staging_dir,
 		$family_styles_metadata,
+		$max_icon_count,
 	): Family_Style_Collection|WP_Error {
 		$icon_families_json_path =
 			trailingslashit( $source_base_dir ) . 'metadata/icon-families.json';
@@ -880,6 +906,31 @@ class Kit_Download {
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
+		}
+
+		// Count all icons across every family style, including both official and
+		// custom icons, and reject the download if it exceeds the maximum.
+		$total_icon_count = array_sum(
+			array_map( 'count', $icons_by_family_style_shorthand ),
+		);
+
+		if ( $total_icon_count > $max_icon_count ) {
+			return new WP_Error(
+				'fontawesome_api_kit_download_too_many_icons',
+				sprintf(
+					/* translators: 1: Number of icons in the kit, 2: Maximum allowed number of icons */
+					__(
+						'The Font Awesome Kit contains %1$d icons, which exceeds the maximum allowed number of %2$d icons. Try a Kit with a smaller subset, or change this limit with the fontawesome_lib_max_icon_count filter.',
+						'wordpress-fontawesome-lib',
+					),
+					$total_icon_count,
+					$max_icon_count,
+				),
+				[
+					'icon_count' => $total_icon_count,
+					'max_icon_count' => $max_icon_count,
+				],
+			);
 		}
 
 		$all_family_styles = new Family_Style_Collection(

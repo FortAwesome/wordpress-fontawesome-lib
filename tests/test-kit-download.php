@@ -808,6 +808,136 @@ class Kit_DownloadTest extends TestCase
         $this->assertFileExists($expected_dir . 'metadata/solid.json');
     }
 
+    public function test_download_and_prepare_selfhosting_returns_error_when_icon_count_exceeds_max()
+    {
+        $create_response = $this->build_create_kit_download_response(
+            self::VALID_BUILD_ID,
+            Kit_Download::STATUS_READY,
+            self::VALID_DOWNLOAD_URL
+        );
+        $create_query_resolver = $this->create_mock_query_resolver($create_response);
+        $auth_token_provider = $this->create_mock_auth_token_provider();
+
+        $kit_download = Kit_Download::create_kit_download(
+            $create_query_resolver,
+            $auth_token_provider,
+            self::VALID_KIT_TOKEN
+        );
+
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $this->intercept_kit_zip_download(self::VALID_DOWNLOAD_URL, $zip_fixture['zip_path']);
+
+        $metadata_response = [
+            'response' => ['code' => 200],
+            'body' => json_encode([
+                'data' => [
+                    'me' => [
+                        'kit' => [
+                            'token' => self::VALID_KIT_TOKEN,
+                            'licenseSelected' => 'free',
+                            'release' => [
+                                'version' => '6.0.0',
+                                'familyStyles' => [
+                                    [
+                                        'family' => 'classic',
+                                        'style' => 'solid',
+                                        'prefix' => 'fas',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ];
+        $metadata_query_resolver = $this->create_mock_query_resolver($metadata_response);
+
+        $destination_base_dir = wp_upload_dir()['basedir'];
+
+        // The fixture contains a single icon, so a max of 0 forces the limit to be exceeded.
+        $result = $kit_download->download_and_prepare_selfhosting(
+            $metadata_query_resolver,
+            $auth_token_provider,
+            $destination_base_dir,
+            ['overwrite' => true, 'max_icon_count' => 0]
+        );
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_api_kit_download_too_many_icons', $result->get_error_code());
+
+        $data = $result->get_error_data();
+        $this->assertIsArray($data);
+        $this->assertEquals(1, $data['icon_count']);
+        $this->assertEquals(0, $data['max_icon_count']);
+    }
+
+    public function test_download_and_prepare_selfhosting_max_icon_count_is_filterable()
+    {
+        $create_response = $this->build_create_kit_download_response(
+            self::VALID_BUILD_ID,
+            Kit_Download::STATUS_READY,
+            self::VALID_DOWNLOAD_URL
+        );
+        $create_query_resolver = $this->create_mock_query_resolver($create_response);
+        $auth_token_provider = $this->create_mock_auth_token_provider();
+
+        $kit_download = Kit_Download::create_kit_download(
+            $create_query_resolver,
+            $auth_token_provider,
+            self::VALID_KIT_TOKEN
+        );
+
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $this->intercept_kit_zip_download(self::VALID_DOWNLOAD_URL, $zip_fixture['zip_path']);
+
+        $metadata_response = [
+            'response' => ['code' => 200],
+            'body' => json_encode([
+                'data' => [
+                    'me' => [
+                        'kit' => [
+                            'token' => self::VALID_KIT_TOKEN,
+                            'licenseSelected' => 'free',
+                            'release' => [
+                                'version' => '6.0.0',
+                                'familyStyles' => [
+                                    [
+                                        'family' => 'classic',
+                                        'style' => 'solid',
+                                        'prefix' => 'fas',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ];
+        $metadata_query_resolver = $this->create_mock_query_resolver($metadata_response);
+
+        $destination_base_dir = wp_upload_dir()['basedir'];
+
+        // The filter has the final say, overriding a permissive opts value.
+        $filter = function () {
+            return 0;
+        };
+        add_filter('fontawesome_lib_max_icon_count', $filter);
+
+        try {
+            $result = $kit_download->download_and_prepare_selfhosting(
+                $metadata_query_resolver,
+                $auth_token_provider,
+                $destination_base_dir,
+                ['overwrite' => true, 'max_icon_count' => 100000]
+            );
+        } finally {
+            remove_filter('fontawesome_lib_max_icon_count', $filter);
+        }
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_api_kit_download_too_many_icons', $result->get_error_code());
+    }
+
     // =========================================================================
     // Status Constants Tests
     // =========================================================================
