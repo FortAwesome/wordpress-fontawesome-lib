@@ -433,13 +433,13 @@ class Kit_Download {
 			return new WP_Error(
 				'fontawesome_api_kit_download_too_large',
 				sprintf(
-					/* translators: 1: Downloaded zip file size in bytes, 2: Maximum allowed size in bytes */
+					/* translators: 1: Downloaded zip file size in MB, 2: Maximum allowed size in MB */
 					__(
-						'The downloaded Font Awesome kit zip file size of %1$s bytes exceeds the maximum allowed size of %2$s bytes. This can be changed by using the "fontawesome_lib_max_kit_zip_bytes" filter.',
+						'The downloaded Font Awesome Kit zip file size of %1$s MB exceeds the maximum allowed size of %2$s MB. Try a Kit with a smaller subset, or change this limit with the fontawesome_lib_max_kit_zip_bytes filter.',
 						'wordpress-fontawesome-lib',
 					),
-					$zip_file_size,
-					$max_zip_bytes,
+					round( $zip_file_size / 1024 / 1024, 2 ),
+					round( $max_zip_bytes / 1024 / 1024, 2 ),
 				),
 				[
 					'zip_file_size' => $zip_file_size,
