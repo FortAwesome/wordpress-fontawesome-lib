@@ -27,10 +27,40 @@ class Kit_DownloadTest extends TestCase
      * - `zip_path` (string): absolute path to the zip file
      * - `entries` (array): list of entries included
      */
-    private function build_minimal_kit_zip_fixture(): array
+    /**
+     * A single SVG object shape reused across fixtures.
+     */
+    private function fixture_svg(): array
+    {
+        return [
+            'width' => 1,
+            'height' => 1,
+            'path' => 'M0 0h1v1H0z',
+        ];
+    }
+
+    /**
+     * @param array|null $icon_families Optional override for the `metadata/icon-families.json` payload.
+     *   When null, a minimal single-icon (classic/solid) payload is used.
+     */
+    private function build_minimal_kit_zip_fixture(?array $icon_families = null): array
     {
         if (!class_exists('ZipArchive')) {
             $this->markTestSkipped('ZipArchive not available in this environment.');
+        }
+
+        if (null === $icon_families) {
+            $icon_families = [
+                'test-icon' => [
+                    'label' => 'Test Icon',
+                    'unicode' => 'f000',
+                    'svgs' => [
+                        'classic' => [
+                            'solid' => $this->fixture_svg(),
+                        ],
+                    ],
+                ],
+            ];
         }
 
         $tmp = tempnam(sys_get_temp_dir(), 'fa-kit-zip-');
@@ -55,21 +85,7 @@ class Kit_DownloadTest extends TestCase
             'css/all.css' => "/* test fixture */\n",
             'webfonts/fa-solid-900.woff2' => "FAKE-WOFF2",
             'metadata/icons.json' => json_encode(['fixture' => true]),
-            'metadata/icon-families.json' => json_encode([
-                'test-icon' => [
-                    'label' => 'Test Icon',
-                    'unicode' => 'f000',
-                    'svgs' => [
-                        'classic' => [
-                            'solid' => [
-                                'width' => 1,
-                                'height' => 1,
-                                'path' => 'M0 0h1v1H0z',
-                            ],
-                        ],
-                    ],
-                ],
-            ]),
+            'metadata/icon-families.json' => json_encode($icon_families),
         ];
 
         foreach ($entries as $name => $contents) {
@@ -806,6 +822,396 @@ class Kit_DownloadTest extends TestCase
         $this->assertFileExists($expected_dir . 'webfonts/fa-solid-900.woff2');
         $this->assertFileExists($expected_dir . 'metadata/kit.json');
         $this->assertFileExists($expected_dir . 'metadata/solid.json');
+    }
+
+    /**
+     * An `icon-families.json` payload containing a known mix of official and custom icons.
+     *
+     * Official icons live under standard families (classic, sharp). Custom icons (aka "icon uploads")
+     * live under the `kit` (monotone) and `kit-duotone` families, both with the `custom` style.
+     *
+     * Breakdown (each family/style entry is one counted icon):
+     *   - Official: coffee/classic-solid, mug/classic-regular, star/sharp-solid  => 3
+     *   - Custom:   my-logo/kit-custom, my-duo-logo/kit-duotone-custom           => 2
+     *   - Total                                                                   => 5
+     */
+    private function mixed_official_and_custom_icon_families(): array
+    {
+        return [
+            // --- Official icons ---
+            'coffee' => [
+                'label' => 'Coffee',
+                'unicode' => 'f0f4',
+                'svgs' => [
+                    'classic' => [
+                        'solid' => $this->fixture_svg(),
+                    ],
+                ],
+            ],
+            'mug' => [
+                'label' => 'Mug',
+                'unicode' => 'f874',
+                'svgs' => [
+                    'classic' => [
+                        'regular' => $this->fixture_svg(),
+                    ],
+                ],
+            ],
+            'star' => [
+                'label' => 'Star',
+                'unicode' => 'f005',
+                'svgs' => [
+                    'sharp' => [
+                        'solid' => $this->fixture_svg(),
+                    ],
+                ],
+            ],
+            // --- Custom icons (icon uploads) ---
+            'my-logo' => [
+                'label' => 'My Logo',
+                'unicode' => 'e001',
+                'svgs' => [
+                    'kit' => [
+                        'custom' => $this->fixture_svg(),
+                    ],
+                ],
+            ],
+            'my-duo-logo' => [
+                'label' => 'My Duotone Logo',
+                'unicode' => 'e002',
+                'svgs' => [
+                    'kit-duotone' => [
+                        'custom' => $this->fixture_svg(),
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Run `download_and_prepare_selfhosting()` end-to-end against the given zip fixture and options,
+     * wiring up a READY Kit_Download, intercepting the HTTP download, and mocking the metadata query.
+     *
+     * @return string|WP_Error the return value of download_and_prepare_selfhosting()
+     */
+    private function run_download_and_prepare_selfhosting(array $zip_fixture, array $opts)
+    {
+        $create_response = $this->build_create_kit_download_response(
+            self::VALID_BUILD_ID,
+            Kit_Download::STATUS_READY,
+            self::VALID_DOWNLOAD_URL
+        );
+        $auth_token_provider = $this->create_mock_auth_token_provider();
+
+        $kit_download = Kit_Download::create_kit_download(
+            $this->create_mock_query_resolver($create_response),
+            $auth_token_provider,
+            self::VALID_KIT_TOKEN
+        );
+
+        $this->intercept_kit_zip_download(self::VALID_DOWNLOAD_URL, $zip_fixture['zip_path']);
+
+        $metadata_response = [
+            'response' => ['code' => 200],
+            'body' => json_encode([
+                'data' => [
+                    'me' => [
+                        'kit' => [
+                            'token' => self::VALID_KIT_TOKEN,
+                            'licenseSelected' => 'free',
+                            'release' => [
+                                'version' => '6.0.0',
+                                'familyStyles' => [
+                                    [
+                                        'family' => 'classic',
+                                        'style' => 'solid',
+                                        'prefix' => 'fas',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ];
+
+        return $kit_download->download_and_prepare_selfhosting(
+            $this->create_mock_query_resolver($metadata_response),
+            $auth_token_provider,
+            wp_upload_dir()['basedir'],
+            $opts
+        );
+    }
+
+    public function test_icon_count_includes_custom_icons()
+    {
+        // The mixed fixture has 3 official + 2 custom icons (total 5).
+        $zip_fixture = $this->build_minimal_kit_zip_fixture(
+            $this->mixed_official_and_custom_icon_families()
+        );
+
+        // Set the max to the number of OFFICIAL icons (3). If custom icons were NOT counted,
+        // the total would be 3 and the limit would not be exceeded. The error therefore proves
+        // the 2 custom icons were counted on top of the official ones.
+        $result = $this->run_download_and_prepare_selfhosting(
+            $zip_fixture,
+            ['overwrite' => true, 'max_icon_count' => 3]
+        );
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_api_kit_download_too_many_icons', $result->get_error_code());
+        $this->assertEquals(5, $result->get_error_data()['icon_count']);
+    }
+
+    public function test_icon_count_includes_official_icons()
+    {
+        // The mixed fixture has 3 official + 2 custom icons (total 5).
+        $zip_fixture = $this->build_minimal_kit_zip_fixture(
+            $this->mixed_official_and_custom_icon_families()
+        );
+
+        // Set the max to the number of CUSTOM icons (2). If official icons were NOT counted,
+        // the total would be 2 and the limit would not be exceeded. The error therefore proves
+        // the 3 official icons were counted on top of the custom ones.
+        $result = $this->run_download_and_prepare_selfhosting(
+            $zip_fixture,
+            ['overwrite' => true, 'max_icon_count' => 2]
+        );
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_api_kit_download_too_many_icons', $result->get_error_code());
+        $this->assertEquals(5, $result->get_error_data()['icon_count']);
+    }
+
+    public function test_icon_count_of_mixed_official_and_custom_icons_is_within_limit()
+    {
+        // The mixed fixture has 3 official + 2 custom icons (total 5). With a max of 5, the
+        // combined count is exactly at the limit (not exceeded), so preparation succeeds.
+        // This confirms all 5 (official + custom) are counted without an off-by-one rejection.
+        $zip_fixture = $this->build_minimal_kit_zip_fixture(
+            $this->mixed_official_and_custom_icon_families()
+        );
+
+        $result = $this->run_download_and_prepare_selfhosting(
+            $zip_fixture,
+            ['overwrite' => true, 'max_icon_count' => 5]
+        );
+
+        $this->assertFalse(
+            is_wp_error($result),
+            is_wp_error($result) ? $result->get_error_message() : ''
+        );
+        $this->assertIsString($result);
+    }
+
+    public function test_download_and_prepare_selfhosting_returns_error_when_icon_count_exceeds_max()
+    {
+        $create_response = $this->build_create_kit_download_response(
+            self::VALID_BUILD_ID,
+            Kit_Download::STATUS_READY,
+            self::VALID_DOWNLOAD_URL
+        );
+        $create_query_resolver = $this->create_mock_query_resolver($create_response);
+        $auth_token_provider = $this->create_mock_auth_token_provider();
+
+        $kit_download = Kit_Download::create_kit_download(
+            $create_query_resolver,
+            $auth_token_provider,
+            self::VALID_KIT_TOKEN
+        );
+
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $this->intercept_kit_zip_download(self::VALID_DOWNLOAD_URL, $zip_fixture['zip_path']);
+
+        $metadata_response = [
+            'response' => ['code' => 200],
+            'body' => json_encode([
+                'data' => [
+                    'me' => [
+                        'kit' => [
+                            'token' => self::VALID_KIT_TOKEN,
+                            'licenseSelected' => 'free',
+                            'release' => [
+                                'version' => '6.0.0',
+                                'familyStyles' => [
+                                    [
+                                        'family' => 'classic',
+                                        'style' => 'solid',
+                                        'prefix' => 'fas',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ];
+        $metadata_query_resolver = $this->create_mock_query_resolver($metadata_response);
+
+        $destination_base_dir = wp_upload_dir()['basedir'];
+
+        // The fixture contains a single icon, so a max of 0 forces the limit to be exceeded.
+        $result = $kit_download->download_and_prepare_selfhosting(
+            $metadata_query_resolver,
+            $auth_token_provider,
+            $destination_base_dir,
+            ['overwrite' => true, 'max_icon_count' => 0]
+        );
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_api_kit_download_too_many_icons', $result->get_error_code());
+
+        $data = $result->get_error_data();
+        $this->assertIsArray($data);
+        $this->assertEquals(1, $data['icon_count']);
+        $this->assertEquals(0, $data['max_icon_count']);
+    }
+
+    public function test_download_and_prepare_selfhosting_max_icon_count_is_filterable()
+    {
+        $create_response = $this->build_create_kit_download_response(
+            self::VALID_BUILD_ID,
+            Kit_Download::STATUS_READY,
+            self::VALID_DOWNLOAD_URL
+        );
+        $create_query_resolver = $this->create_mock_query_resolver($create_response);
+        $auth_token_provider = $this->create_mock_auth_token_provider();
+
+        $kit_download = Kit_Download::create_kit_download(
+            $create_query_resolver,
+            $auth_token_provider,
+            self::VALID_KIT_TOKEN
+        );
+
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $this->intercept_kit_zip_download(self::VALID_DOWNLOAD_URL, $zip_fixture['zip_path']);
+
+        $metadata_response = [
+            'response' => ['code' => 200],
+            'body' => json_encode([
+                'data' => [
+                    'me' => [
+                        'kit' => [
+                            'token' => self::VALID_KIT_TOKEN,
+                            'licenseSelected' => 'free',
+                            'release' => [
+                                'version' => '6.0.0',
+                                'familyStyles' => [
+                                    [
+                                        'family' => 'classic',
+                                        'style' => 'solid',
+                                        'prefix' => 'fas',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ];
+        $metadata_query_resolver = $this->create_mock_query_resolver($metadata_response);
+
+        $destination_base_dir = wp_upload_dir()['basedir'];
+
+        // The filter has the final say, overriding a permissive opts value.
+        $filter = function () {
+            return 0;
+        };
+        add_filter('fontawesome_lib_max_icon_count', $filter);
+
+        try {
+            $result = $kit_download->download_and_prepare_selfhosting(
+                $metadata_query_resolver,
+                $auth_token_provider,
+                $destination_base_dir,
+                ['overwrite' => true, 'max_icon_count' => 100000]
+            );
+        } finally {
+            remove_filter('fontawesome_lib_max_icon_count', $filter);
+        }
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_api_kit_download_too_many_icons', $result->get_error_code());
+    }
+
+    public function test_download_and_prepare_selfhosting_returns_error_when_zip_exceeds_max_bytes()
+    {
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $zip_file_size = filesize($zip_fixture['zip_path']);
+        $this->assertIsInt($zip_file_size);
+
+        // Force the limit to one byte below the fixture's actual size so it is exceeded.
+        $filter = function () use ($zip_file_size) {
+            return $zip_file_size - 1;
+        };
+        add_filter('fontawesome_lib_max_kit_zip_bytes', $filter);
+
+        try {
+            $result = $this->run_download_and_prepare_selfhosting(
+                $zip_fixture,
+                ['overwrite' => true]
+            );
+        } finally {
+            remove_filter('fontawesome_lib_max_kit_zip_bytes', $filter);
+        }
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_api_kit_download_too_large', $result->get_error_code());
+
+        $data = $result->get_error_data();
+        $this->assertIsArray($data);
+        $this->assertEquals($zip_file_size, $data['zip_file_size']);
+        $this->assertEquals($zip_file_size - 1, $data['max_zip_bytes']);
+    }
+
+    public function test_download_and_prepare_selfhosting_allows_zip_size_at_the_limit()
+    {
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $zip_file_size = filesize($zip_fixture['zip_path']);
+        $this->assertIsInt($zip_file_size);
+
+        // The check rejects only when the size is strictly greater than the limit, so a
+        // limit equal to the fixture's exact size must be allowed through.
+        $filter = function () use ($zip_file_size) {
+            return $zip_file_size;
+        };
+        add_filter('fontawesome_lib_max_kit_zip_bytes', $filter);
+
+        try {
+            $result = $this->run_download_and_prepare_selfhosting(
+                $zip_fixture,
+                ['overwrite' => true]
+            );
+        } finally {
+            remove_filter('fontawesome_lib_max_kit_zip_bytes', $filter);
+        }
+
+        $this->assertFalse(
+            is_wp_error($result),
+            is_wp_error($result) ? $result->get_error_message() : ''
+        );
+        $this->assertIsString($result);
+    }
+
+    public function test_prepare_selfhosting_returns_error_when_zip_cannot_be_opened()
+    {
+        // A readable, non-empty file that is NOT a valid zip archive. It passes the
+        // download-side size checks but ZipArchive::open() rejects it with ER_NOZIP.
+        $not_a_zip = tempnam(sys_get_temp_dir(), 'fa-not-a-zip-');
+        if (false === $not_a_zip) {
+            $this->fail('Failed to create temp file for non-zip fixture.');
+        }
+        file_put_contents($not_a_zip, "this is not a zip archive\n");
+
+        $result = $this->run_download_and_prepare_selfhosting(
+            ['zip_path' => $not_a_zip],
+            ['overwrite' => true]
+        );
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_zip_file_open_failure', $result->get_error_code());
+        // The mapped ER_NOZIP reason should surface in the message.
+        $this->assertStringContainsString('Not a zip archive.', $result->get_error_message());
     }
 
     // =========================================================================
