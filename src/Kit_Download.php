@@ -413,10 +413,11 @@ class Kit_Download {
 			);
 		}
 
-		if (
-			! $wp_filesystem->exists( $zip_file_path ) ||
-			$wp_filesystem->size( $zip_file_path ) === 0
-		) {
+		$zip_file_size = $wp_filesystem->exists( $zip_file_path )
+			? $wp_filesystem->size( $zip_file_path )
+			: 0;
+
+		if ( 0 === $zip_file_size ) {
 			return new WP_Error(
 				'fontawesome_api_kit_download_response_not_ok',
 				__(
@@ -426,12 +427,15 @@ class Kit_Download {
 			);
 		}
 
-		$max_zip_bytes = apply_filters(
-			'fontawesome_lib_max_kit_zip_bytes',
-			DEFAULT_MAX_KIT_ZIP_BYTES
+		$max_zip_bytes = max(
+			0,
+			intval(
+				apply_filters(
+					'fontawesome_lib_max_kit_zip_bytes',
+					DEFAULT_MAX_KIT_ZIP_BYTES
+				),
+			),
 		);
-
-		$zip_file_size = $wp_filesystem->size( $zip_file_path );
 
 		if ( $zip_file_size > $max_zip_bytes ) {
 			return new WP_Error(
@@ -518,8 +522,11 @@ class Kit_Download {
 			$max_icon_count = intval( $opts['max_icon_count'] );
 		}
 
-		$max_icon_count = intval(
-			apply_filters( 'fontawesome_lib_max_icon_count', $max_icon_count ),
+		$max_icon_count = max(
+			0,
+			intval(
+				apply_filters( 'fontawesome_lib_max_icon_count', $max_icon_count ),
+			),
 		);
 
 		if (
@@ -659,7 +666,7 @@ class Kit_Download {
 			return new WP_Error(
 				'fontawesome_zip_file_open_failure',
 				sprintf(
-					/* translators: 1: Plugin name */
+					/* translators: 1: ZIP open failure reason */
 					__( 'The Font Awesome kit zip file failed to open with reason: %1$s', 'wordpress-fontawesome-lib' ),
 					$zip_open_failure_reason
 				)
@@ -832,6 +839,36 @@ class Kit_Download {
 			);
 		}
 
+		// Count all icons across every family style, including both official and
+		// custom icons, and reject the download before writing anything to disk if
+		// it exceeds the maximum. Each family/style entry counts as one icon.
+		$total_icon_count = 0;
+
+		foreach ( $icon_families_data as $icon_data ) {
+			foreach ( $icon_data['svgs'] as $style_map ) {
+				$total_icon_count += count( $style_map );
+			}
+		}
+
+		if ( $total_icon_count > $max_icon_count ) {
+			return new WP_Error(
+				'fontawesome_api_kit_download_too_many_icons',
+				sprintf(
+					/* translators: 1: Number of icons in the kit, 2: Maximum allowed number of icons */
+					__(
+						'The Font Awesome Kit contains %1$d icons, which exceeds the maximum allowed number of %2$d icons. Try a Kit with a smaller subset, or change this limit with the fontawesome_lib_max_icon_count filter.',
+						'wordpress-fontawesome-lib',
+					),
+					$total_icon_count,
+					$max_icon_count,
+				),
+				[
+					'icon_count' => $total_icon_count,
+					'max_icon_count' => $max_icon_count,
+				],
+			);
+		}
+
 		$icons_by_family_style_shorthand = [];
 
 		foreach ( $icon_families_data as $icon_name => $icon_data ) {
@@ -906,31 +943,6 @@ class Kit_Download {
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
-		}
-
-		// Count all icons across every family style, including both official and
-		// custom icons, and reject the download if it exceeds the maximum.
-		$total_icon_count = array_sum(
-			array_map( 'count', $icons_by_family_style_shorthand ),
-		);
-
-		if ( $total_icon_count > $max_icon_count ) {
-			return new WP_Error(
-				'fontawesome_api_kit_download_too_many_icons',
-				sprintf(
-					/* translators: 1: Number of icons in the kit, 2: Maximum allowed number of icons */
-					__(
-						'The Font Awesome Kit contains %1$d icons, which exceeds the maximum allowed number of %2$d icons. Try a Kit with a smaller subset, or change this limit with the fontawesome_lib_max_icon_count filter.',
-						'wordpress-fontawesome-lib',
-					),
-					$total_icon_count,
-					$max_icon_count,
-				),
-				[
-					'icon_count' => $total_icon_count,
-					'max_icon_count' => $max_icon_count,
-				],
-			);
 		}
 
 		$all_family_styles = new Family_Style_Collection(

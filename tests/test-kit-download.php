@@ -1134,6 +1134,86 @@ class Kit_DownloadTest extends TestCase
         $this->assertEquals('fontawesome_api_kit_download_too_many_icons', $result->get_error_code());
     }
 
+    public function test_download_and_prepare_selfhosting_returns_error_when_zip_exceeds_max_bytes()
+    {
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $zip_file_size = filesize($zip_fixture['zip_path']);
+        $this->assertIsInt($zip_file_size);
+
+        // Force the limit to one byte below the fixture's actual size so it is exceeded.
+        $filter = function () use ($zip_file_size) {
+            return $zip_file_size - 1;
+        };
+        add_filter('fontawesome_lib_max_kit_zip_bytes', $filter);
+
+        try {
+            $result = $this->run_download_and_prepare_selfhosting(
+                $zip_fixture,
+                ['overwrite' => true]
+            );
+        } finally {
+            remove_filter('fontawesome_lib_max_kit_zip_bytes', $filter);
+        }
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_api_kit_download_too_large', $result->get_error_code());
+
+        $data = $result->get_error_data();
+        $this->assertIsArray($data);
+        $this->assertEquals($zip_file_size, $data['zip_file_size']);
+        $this->assertEquals($zip_file_size - 1, $data['max_zip_bytes']);
+    }
+
+    public function test_download_and_prepare_selfhosting_allows_zip_size_at_the_limit()
+    {
+        $zip_fixture = $this->build_minimal_kit_zip_fixture();
+        $zip_file_size = filesize($zip_fixture['zip_path']);
+        $this->assertIsInt($zip_file_size);
+
+        // The check rejects only when the size is strictly greater than the limit, so a
+        // limit equal to the fixture's exact size must be allowed through.
+        $filter = function () use ($zip_file_size) {
+            return $zip_file_size;
+        };
+        add_filter('fontawesome_lib_max_kit_zip_bytes', $filter);
+
+        try {
+            $result = $this->run_download_and_prepare_selfhosting(
+                $zip_fixture,
+                ['overwrite' => true]
+            );
+        } finally {
+            remove_filter('fontawesome_lib_max_kit_zip_bytes', $filter);
+        }
+
+        $this->assertFalse(
+            is_wp_error($result),
+            is_wp_error($result) ? $result->get_error_message() : ''
+        );
+        $this->assertIsString($result);
+    }
+
+    public function test_prepare_selfhosting_returns_error_when_zip_cannot_be_opened()
+    {
+        // A readable, non-empty file that is NOT a valid zip archive. It passes the
+        // download-side size checks but ZipArchive::open() rejects it with ER_NOZIP.
+        $not_a_zip = tempnam(sys_get_temp_dir(), 'fa-not-a-zip-');
+        if (false === $not_a_zip) {
+            $this->fail('Failed to create temp file for non-zip fixture.');
+        }
+        file_put_contents($not_a_zip, "this is not a zip archive\n");
+
+        $result = $this->run_download_and_prepare_selfhosting(
+            ['zip_path' => $not_a_zip],
+            ['overwrite' => true]
+        );
+
+        $this->assertTrue(is_wp_error($result));
+        $this->assertEquals('fontawesome_zip_file_open_failure', $result->get_error_code());
+        // The mapped ER_NOZIP reason should surface in the message.
+        $this->assertStringContainsString('Not a zip archive.', $result->get_error_message());
+    }
+
     // =========================================================================
     // Status Constants Tests
     // =========================================================================
