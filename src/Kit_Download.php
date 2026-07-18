@@ -10,17 +10,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 use FontAwesomeLib\Query_Resolver;
 use WP_Error;
 
-const ZIP_OPEN_STATUS_LOOKUP = array(
-			\ZipArchive::ER_EXISTS => "File already exists.",
-			\ZipArchive::ER_INCONS => "Zip archive inconsistent.",
-			\ZipArchive::ER_INVAL  => "Invalid argument.",
-			\ZipArchive::ER_MEMORY => "Malloc failure.",
-			\ZipArchive::ER_NOENT  => "No such file.",
-			\ZipArchive::ER_NOZIP  => "Not a zip archive.",
-			\ZipArchive::ER_OPEN   => "Can't open file.",
-			\ZipArchive::ER_READ   => "Read error.",
-			\ZipArchive::ER_SEEK   => "Seek error.",
-		);
+const ZIP_OPEN_STATUS_LOOKUP = [
+	\ZipArchive::ER_EXISTS => 'File already exists.',
+	\ZipArchive::ER_INCONS => 'Zip archive inconsistent.',
+	\ZipArchive::ER_INVAL  => 'Invalid argument.',
+	\ZipArchive::ER_MEMORY => 'Malloc failure.',
+	\ZipArchive::ER_NOENT  => 'No such file.',
+	\ZipArchive::ER_NOZIP  => 'Not a zip archive.',
+	\ZipArchive::ER_OPEN   => "Can't open file.",
+	\ZipArchive::ER_READ   => 'Read error.',
+	\ZipArchive::ER_SEEK   => 'Seek error.',
+];
 
 // 50 MB.
 const DEFAULT_MAX_KIT_ZIP_BYTES = 50 * 1024 * 1024;
@@ -652,9 +652,9 @@ class Kit_Download {
 		$zip_open_result = $zip->open( $zip_file_path, \ZipArchive::RDONLY );
 
 		if (
-			$zip_open_result !== true
+			true !== $zip_open_result
 		) {
-			$zip_open_failure_reason = ZIP_OPEN_STATUS_LOOKUP[$zip_open_result] ?? "unknown";
+			$zip_open_failure_reason = ZIP_OPEN_STATUS_LOOKUP[ $zip_open_result ] ?? 'unknown';
 
 			return new WP_Error(
 				'fontawesome_zip_file_open_failure',
